@@ -215,6 +215,8 @@ class LocalCacheSource:
     """
     def __init__(self, path: str = "legal_cache.json"):
         self.entries: list[SourceHit] = []
+        if not os.path.exists(path):   # also look next to this file, so the server can start from any folder
+            path = os.path.join(os.path.dirname(os.path.abspath(__file__)), os.path.basename(path))
         if os.path.exists(path):
             with open(path, encoding="utf-8") as f:
                 self.entries = [SourceHit(**e) for e in json.load(f)]
