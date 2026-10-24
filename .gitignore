@@ -1,3 +1,5 @@
-.env
-*.pem
-__pycache__/
+   body.json
+   .env
+   *.pem
+   __pycache__/
+   .pytest_cache/
