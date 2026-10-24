@@ -23,7 +23,7 @@ not that it supports the point the draft makes.
 ```
 pip3 install requests pytest fastapi uvicorn
 export INDIANKANOON_API_TOKEN=<token>      # backend only, NEVER in frontend or git
-python3 -m pytest -q test_citation_verifier.py     # expect: 19 passed
+python3 -m pytest -q test_citation_verifier.py     # expect: 28 passed
 ```
 
 Optional LLM pass (finds citations the regex misses): set `ANTHROPIC_API_KEY`, or pass your own
@@ -161,3 +161,39 @@ Frontend: copy `Research.js` and `Research.css` into `src/`, route to `<Research
 Set `REACT_APP_API_URL` if the backend is not on `http://localhost:8000`.
 The page also has a "Check a citation" box that calls `/verify`. Status wording in the UI:
 verified = Verified, partially_verified = Needs Review, unverified = Not Found.
+
+### Research API routes
+
+| Route | What it returns |
+|---|---|
+| `GET /research?q=&type=all\|supremecourt\|laws&page=0` | Search results: `title, url, court, year, snippet, kind`, plus `has_more` |
+| `GET /research/doc/{doc_id}?q=` | The passages of one document that match `q` (Indian Kanoon `docfragment`): `{ok, title, url, passages[]}` |
+| `GET /research/answer?q=` | Evidence-first summary: `{answer:[{text, sources:[n]}], sources[], note}` |
+
+`/research/answer` rules: the model sees only the extracts, every sentence must cite `[n]` of a real source,
+and any sentence without a valid citation is dropped. If the AI key is missing or fails, it returns the sources
+with a note and no summary. It costs one search call plus one AI call, so trigger it from a button.
+`doc_id` must be digits only. Test page: `http://localhost:8000/test` (add `testpage` router in `main.py`).
+
+### Short summaries (one per result)
+
+`POST /research/summarize` with `{"query": "...", "results": [{"url","title","snippet"}, ...]}` (send back exactly what
+`/research` returned). Returns `{"summaries": {"<source url>": "one sentence"}, "note": ...}`.
+
+- One AI call for the whole page. The AI sees only the extracts, never the open web.
+- A summary is kept only if it passes a grounding check: every number in it must appear in the extract and at
+  least 70% of its meaningful words must appear there. Anything else is dropped and the card keeps its extract.
+- Summaries are keyed by the source link, so the link always travels with the text. Only `https://indiankanoon.org/doc/<digits>/` links are accepted.
+- No AI key or AI failure: the cards still show extracts and links. Nothing breaks.
+- Needs `ANTHROPIC_API_KEY` in the terminal that runs uvicorn. Cost: one AI call per search page, no extra Indian Kanoon call.
+
+### Citation status UI (Research page)
+
+The "Check a citation" panel calls `POST /verify` and shows:
+- a status summary: green **Verified**, amber **Needs Review** (`partially_verified`), red **Not Found** (`unverified`)
+- **Your draft, checked**: the pasted text with every citation highlighted by status using `citation.span`
+  (click a highlight to jump to its card)
+- one card per citation with the reasons, the source link and the warning for Not Found
+- **Apply fix** (only when `suggestion.replace_with` exists): replaces the text at the span, then calls `/verify` again.
+  If the text at the span no longer matches `citation.raw` it does not edit, it just re-checks.
+- if the user edits the draft after a check, a note asks them to re-check and Apply fix is disabled

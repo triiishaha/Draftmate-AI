@@ -26,6 +26,11 @@
   <div class="rs-examples" id="examples"><span class="rs-muted">Try:</span></div>
   <p class="rs-error" id="err" role="alert" hidden></p>
   <p class="rs-muted" id="busy" aria-live="polite" hidden>Searching Indian Kanoon…</p>
+  <div id="sumwrap" hidden>
+    <button class="rs-btn2" id="sumgo" type="button">Summarise from sources</button>
+    <span class="rs-muted rs-fine">Uses only the extracts below. Every sentence cites its source.</span>
+  </div>
+  <section id="sum" aria-live="polite"></section>
   <section id="out" aria-live="polite"></section>
 
   <section class="rs-panel" aria-labelledby="cc-title">
@@ -65,6 +70,21 @@ async function api(path, options) {
 }
 
 let terms = [], page = 0, shown = 0;
+const sumSlots = new Map();
+
+// One AI call for the whole page of results. The AI sees only the extracts the server already returned.
+async function summarizeResults(results, query) {
+  const items = results.filter(r => r.snippet).map(r => ({url: r.url, title: r.title, snippet: r.snippet}));
+  if (!items.length) return;
+  try {
+    const d = await api("/research/summarize", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({query, results: items})});
+    for (const [url, text] of Object.entries(d.summaries || {})) {
+      const slot = sumSlots.get(url); if (!slot) continue;
+      slot.replaceChildren(el("span", "rs-snippet-label", "Short summary (AI, from the paragraph above)"), text + " ", link(url, "Source ↗"));
+      slot.hidden = false;
+    }
+  } catch (e) { /* summaries are optional; extracts and links are already on screen */ }
+}
 function highlight(text, cls) {
   const box = el("span", cls);
   const ts = terms.filter(t => t.length > 2).map(t => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
@@ -100,9 +120,25 @@ function card(r) {
   const t = el("h3", "rs-title"); t.append(highlight(r.title));
   a.append(top, t);
   const p = el("p", "rs-snippet" + (r.snippet ? "" : " rs-muted"));
-  if (r.snippet) { p.append(el("span", "rs-snippet-label", "Extract from source"), highlight(r.snippet)); }
+  if (r.snippet) { p.append(el("span", "rs-snippet-label", "Relevant paragraph from the source"), highlight(r.snippet)); }
   else p.textContent = "No extract returned. Open the source to read it.";
-  a.append(p, link(r.url, "Open source on Indian Kanoon ↗"));
+  const sl = el("p", "rs-aisum", null, {hidden: ""});
+  sumSlots.set(r.url, sl);
+  const row = el("div", "rs-actions");
+  const pb = el("button", "rs-btn2", "Show relevant passages", {type: "button"});
+  const box = el("div", "rs-passages");
+  pb.onclick = async () => {
+    pb.disabled = true; pb.textContent = "Loading…"; box.replaceChildren();
+    try {
+      const id = (r.url.match(/doc\/(\d+)/) || [])[1];
+      const d = await api("/research/doc/" + id + "?q=" + encodeURIComponent($("q").value.trim()));
+      if (d.ok) d.passages.forEach(x => { const q = el("blockquote", "rs-quote"); q.append(highlight(x)); box.append(q); });
+      else box.append(el("p", "rs-muted", d.note || "No passage available."));
+      pb.remove();
+    } catch (e) { pb.disabled = false; pb.textContent = "Show relevant passages"; box.append(el("p", "rs-error", "Could not load the passage.")); }
+  };
+  row.append(pb, link(r.url, "Open source on Indian Kanoon ↗"));
+  a.append(p, sl, row, box);
   return a;
 }
 
@@ -112,7 +148,7 @@ async function search(more) {
   more = more === true;
   page = more ? page + 1 : 0;
   $("err").hidden = true; $("busy").hidden = false; $("examples").hidden = true;
-  if (!more) { $("out").replaceChildren(); shown = 0; terms = term.split(/\s+/); }
+  if (!more) { $("out").replaceChildren(); $("sum").replaceChildren(); shown = 0; sumSlots.clear(); terms = term.split(/\s+/); $("sumwrap").hidden = false; }
   $("go").disabled = true; $("go").textContent = "Searching…";
   const moreBtn = $("more"); if (moreBtn) moreBtn.disabled = true;
   try {
@@ -124,6 +160,7 @@ async function search(more) {
     shown += res.count;
     $("out").querySelector(".rs-count").textContent = shown + " result" + (shown === 1 ? "" : "s") + " for “" + res.query + "”";
     res.results.forEach(r => $("list").append(card(r)));
+    summarizeResults(res.results, res.query);
     if ($("more")) $("more").remove();
     if (res.has_more) {
       const b = el("button", "rs-btn rs-more", "Load more results", {id: "more", type: "button"});
@@ -142,40 +179,105 @@ async function search(more) {
 }
 $("form").onsubmit = e => { e.preventDefault(); search(); };
 
-$("cc").oninput = () => { $("ccgo").disabled = !$("cc").value.trim(); };
-$("ccgo").onclick = async () => {
+$("sumgo").onclick = async () => {
+  const term = $("q").value.trim(), btn = $("sumgo"), box = $("sum");
+  btn.disabled = true; btn.textContent = "Summarising…"; box.replaceChildren();
+  try {
+    const d = await api("/research/answer?q=" + encodeURIComponent(term));
+    const panel = el("div", "rs-summarybox");
+    panel.append(el("h2", null, "Summary from sources"));
+    if (d.answer.length) {
+      d.answer.forEach(a => {
+        const p = el("p"); p.append(a.text + " ");
+        a.sources.forEach(n => p.append(el("sup", "rs-cite", "[" + n + "]")));
+        panel.append(p);
+      });
+    } else panel.append(el("p", "rs-muted", d.note || "No summary available."));
+    const ol = el("ol", "rs-srclist");
+    d.sources.forEach(s => { const li = el("li"); li.append(link(s.url, s.title)); ol.append(li); });
+    panel.append(ol, el("p", "rs-muted rs-fine", "Written from the extracts only. Open each source to confirm before relying on it."));
+    box.append(panel);
+  } catch (e) { box.append(el("p", "rs-error", "Could not summarise. Is the backend running?")); }
+  finally { btn.disabled = false; btn.textContent = "Summarise from sources"; }
+};
+
+let checked = null;   // {text, data}: spans in `data` point into `text`
+$("cc").oninput = () => { $("ccgo").disabled = !$("cc").value.trim(); if (checked) renderCheck(); };
+
+function renderCheck() {
+  const {text, data} = checked, out = $("ccout"), stale = $("cc").value !== text;
+  out.replaceChildren();
+  const wrap = el("div", "rs-verdicts");
+  const s = data.summary, b = (n, c) => el("b", c, String(n));
+  const sum = el("p", "rs-summary");
+  sum.append(b(s.verified, "ok"), " Verified · ", b(s.partially_verified, "warn"), " Needs Review · ", b(s.unverified, "bad"), " Not Found");
+  wrap.append(sum);
+  if (stale) wrap.append(el("p", "rs-note", "You edited the draft after this check. Click Check citations again."));
+  if (!data.items.length) wrap.append(el("p", "rs-muted", "No citations found in this text."));
+  else {
+    // highlighted draft: every citation coloured by status (spans must not overlap)
+    const box = el("div", "rs-draft"); let pos = 0;
+    const ordered = data.items.map((it, i) => ({it, i})).sort((x, y) => x.it.citation.span[0] - y.it.citation.span[0]);
+    for (const {it, i} of ordered) {
+      const [a0, a1] = it.citation.span;
+      if (a0 < pos || a1 > text.length) continue;
+      box.append(text.slice(pos, a0));
+      const m = el("mark", "rs-hl " + STATUS[it.status][1], text.slice(a0, a1), {tabindex: "0", title: STATUS[it.status][0]});
+      const go = () => { const t = $("v" + i); t.scrollIntoView({behavior: "smooth", block: "center"}); t.classList.add("flash"); setTimeout(() => t.classList.remove("flash"), 1200); };
+      m.onclick = go; m.onkeydown = e => { if (e.key === "Enter") go(); };
+      box.append(m); pos = a1;
+    }
+    box.append(text.slice(pos));
+    const legend = el("p", "rs-legend");
+    for (const k of ["verified", "partially_verified", "unverified"]) legend.append(el("span", "rs-dot " + STATUS[k][1]), STATUS[k][0] + "   ");
+    wrap.append(el("h3", "rs-sub", "Your draft, checked"), legend, box);
+  }
+  data.items.forEach((it, i) => {
+    const [label, cls] = STATUS[it.status];
+    const v = el("div", "rs-verdict " + cls, null, {id: "v" + i});
+    const head = el("div", "rs-verdict-head");
+    head.append(el("span", "rs-badge " + cls, label), el("span", "rs-verdict-name", it.citation.raw));
+    const ul = el("ul", "rs-reasons"); it.reasons.forEach(x => ul.append(el("li", null, x)));
+    v.append(head, ul);
+    if (it.source) v.append(link(it.source.url, it.source.title + " ↗"));
+    if (it.status === "unverified") v.append(el("p", "rs-warning", "No matching authority found. Do not rely on it."));
+    if (it.suggestion) {
+      v.append(el("p", "rs-suggest", it.suggestion.message));
+      if (it.suggestion.replace_with) {
+        const fix = el("button", "rs-btn2", "Apply fix: " + it.suggestion.replace_with, {type: "button"});
+        fix.disabled = stale;
+        fix.onclick = () => applyFix(it);
+        v.append(fix, el("p", "rs-muted rs-fine", "This fixes the year only. Check the reporter reference yourself."));
+      }
+    }
+    wrap.append(v);
+  });
+  wrap.append(el("p", "rs-muted rs-fine", "\"Verified\" means the authority exists under that name and year. It does not mean it supports your argument. A lawyer must review."));
+  out.append(wrap);
+}
+
+async function runCheck() {
   const text = $("cc").value;
-  $("ccerr").hidden = true; $("ccout").replaceChildren();
+  $("ccerr").hidden = true;
   $("ccgo").disabled = true; $("ccgo").textContent = "Checking…";
   try {
-    const d = await api("/verify", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({text})});
-    const out = $("ccout"), wrap = el("div", "rs-verdicts");
-    const sum = el("p", "rs-summary");
-    const s = d.summary;
-    const b = (n, c) => el("b", c, String(n));
-    sum.append(b(s.verified, "ok"), " Verified · ", b(s.partially_verified, "warn"), " Needs Review · ", b(s.unverified, "bad"), " Not Found");
-    wrap.append(sum);
-    if (!d.items.length) wrap.append(el("p", "rs-muted", "No citations found in this text."));
-    for (const it of d.items) {
-      const [label, cls] = STATUS[it.status];
-      const v = el("div", "rs-verdict " + cls);
-      const head = el("div", "rs-verdict-head");
-      head.append(el("span", "rs-badge " + cls, label), el("span", "rs-verdict-name", it.citation.raw));
-      const ul = el("ul", "rs-reasons"); it.reasons.forEach(x => ul.append(el("li", null, x)));
-      v.append(head, ul);
-      if (it.source) v.append(link(it.source.url, it.source.title + " ↗"));
-      if (it.status === "unverified") v.append(el("p", "rs-warning", "No matching authority found. Do not rely on it."));
-      if (it.suggestion) v.append(el("p", "rs-suggest", it.suggestion.message));
-      wrap.append(v);
-    }
-    wrap.append(el("p", "rs-muted rs-fine", "\"Verified\" means the authority exists under that name and year. It does not mean it supports your argument. A lawyer must review."));
-    out.append(wrap);
+    const data = await api("/verify", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({text})});
+    checked = {text, data}; renderCheck();
   } catch (e) {
     $("ccerr").textContent = "Could not reach the verifier. Is the backend running?"; $("ccerr").hidden = false;
   } finally {
     $("ccgo").textContent = "Check citations"; $("ccgo").disabled = !$("cc").value.trim();
   }
-};
+}
+
+// Replace the cited text at its span, then re-verify (later spans shift after an edit).
+function applyFix(it) {
+  const t = checked.text, [a, b] = it.citation.span;
+  if (t.slice(a, b) !== it.citation.raw) return runCheck();   // text moved: do not guess, just re-check
+  $("cc").value = t.slice(0, a) + it.suggestion.replace_with + t.slice(b);
+  runCheck();
+}
+$("ccgo").onclick = runCheck;
 drawTabs();
 </script>
 </body>

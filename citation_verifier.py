@@ -286,7 +286,7 @@ class IndianKanoonSource:
             url=f"https://indiankanoon.org/doc/{d.get('tid')}/",
             year=_year_from(title) or _year_from(d.get("docsource", "")),
             court=d.get("docsource"),
-            snippet=clean(d.get("headline"))[:300],
+            snippet=clean(d.get("headline"))[:500],
         )
 
 
