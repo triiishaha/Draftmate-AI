@@ -1,0 +1,18 @@
+{
+  "id": "agreement-drafting",
+  "name": "Agreement Drafting",
+  "category": "Drafting & Writing",
+  "audience": [
+    "lawyer"
+  ],
+  "description": "Draft a bilateral agreement",
+  "instruction": "Draft a complete agreement: parties, recitals, definitions, operative clauses, term, termination, dispute resolution, governing law and signature block. Use defined terms consistently.",
+  "needs_document": false,
+  "output": "draft",
+  "keywords": [
+    "agreement",
+    "bilateral",
+    "draft",
+    "drafting"
+  ]
+}

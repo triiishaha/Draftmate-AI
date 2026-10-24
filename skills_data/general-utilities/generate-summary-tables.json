@@ -1,0 +1,19 @@
+{
+  "id": "generate-summary-tables",
+  "name": "Generate Summary Tables",
+  "category": "General Utilities",
+  "audience": [
+    "lawyer",
+    "student"
+  ],
+  "description": "Summarise as tables",
+  "instruction": "Summarise the content as one or more tables with clear column headings.",
+  "needs_document": true,
+  "output": "table",
+  "keywords": [
+    "generate",
+    "summarise",
+    "summary",
+    "tables"
+  ]
+}

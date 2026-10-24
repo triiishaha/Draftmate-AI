@@ -1,0 +1,20 @@
+{
+  "id": "ratio-holding-extraction",
+  "name": "Ratio/Holding Extraction",
+  "category": "Case & Judgment Tools",
+  "audience": [
+    "lawyer",
+    "student"
+  ],
+  "description": "Extract ratio and holdings",
+  "instruction": "Extract the ratio decidendi and holdings and separate them from obiter observations. Give paragraph numbers.",
+  "needs_document": true,
+  "output": "analysis",
+  "keywords": [
+    "extract",
+    "extraction",
+    "holding",
+    "holdings",
+    "ratio"
+  ]
+}

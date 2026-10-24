@@ -1,0 +1,19 @@
+{
+  "id": "regulatory-update-summary",
+  "name": "Regulatory Update Summary",
+  "category": "Compliance & Advisory",
+  "audience": [
+    "lawyer"
+  ],
+  "description": "Summarise regulatory changes",
+  "instruction": "Summarise the regulatory change: what changed, who is affected, effective date, action items. Use only the supplied text and say if the date is unclear.",
+  "needs_document": true,
+  "output": "summary",
+  "keywords": [
+    "changes",
+    "regulatory",
+    "summarise",
+    "summary",
+    "update"
+  ]
+}

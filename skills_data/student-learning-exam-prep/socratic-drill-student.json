@@ -1,0 +1,19 @@
+{
+  "id": "socratic-drill-student",
+  "name": "Socratic Drill",
+  "category": "Student Learning & Exam Prep",
+  "audience": [
+    "student"
+  ],
+  "description": "Question-led learning",
+  "instruction": "Teach by asking one question at a time about the topic and responding to the student's answer. Reveal the answer only after they try.",
+  "needs_document": false,
+  "output": "study",
+  "keywords": [
+    "drill",
+    "learning",
+    "question",
+    "socratic",
+    "student"
+  ]
+}

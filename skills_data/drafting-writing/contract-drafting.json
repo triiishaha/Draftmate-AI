@@ -1,0 +1,19 @@
+{
+  "id": "contract-drafting",
+  "name": "Contract Drafting",
+  "category": "Drafting & Writing",
+  "audience": [
+    "lawyer"
+  ],
+  "description": "Draft commercial contracts",
+  "instruction": "Draft a commercial contract with clear obligations, payment terms, liability limits, confidentiality and boilerplate. Mark every placeholder in [square brackets].",
+  "needs_document": false,
+  "output": "draft",
+  "keywords": [
+    "commercial",
+    "contract",
+    "contracts",
+    "draft",
+    "drafting"
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "id": "concept-explainer-student",
+  "name": "Concept Explainer",
+  "category": "Student Learning & Exam Prep",
+  "audience": [
+    "student"
+  ],
+  "description": "Explain a legal concept",
+  "instruction": "Explain the concept in plain language: definition, elements, an example and common confusions.",
+  "needs_document": false,
+  "output": "study",
+  "keywords": [
+    "concept",
+    "explain",
+    "explainer",
+    "legal",
+    "student"
+  ]
+}

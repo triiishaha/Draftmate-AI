@@ -1,0 +1,18 @@
+{
+  "id": "case-analysis",
+  "name": "Case Analysis",
+  "category": "Case & Judgment Tools",
+  "audience": [
+    "lawyer",
+    "student"
+  ],
+  "description": "Analyse a case",
+  "instruction": "Analyse the case: key facts, issues, each side's arguments, the court's reasoning, the outcome and a critique.",
+  "needs_document": true,
+  "output": "analysis",
+  "keywords": [
+    "analyse",
+    "analysis",
+    "case"
+  ]
+}

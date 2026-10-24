@@ -1,0 +1,21 @@
+{
+  "id": "career-skill-finder-student",
+  "name": "Career Skill Finder",
+  "category": "Student Learning & Exam Prep",
+  "audience": [
+    "student"
+  ],
+  "description": "Find legal career paths",
+  "instruction": "Suggest legal career paths and the skills to build for them, based on the student's interests and strengths. Be honest about uncertainty.",
+  "needs_document": false,
+  "output": "study",
+  "keywords": [
+    "career",
+    "find",
+    "finder",
+    "legal",
+    "paths",
+    "skill",
+    "student"
+  ]
+}

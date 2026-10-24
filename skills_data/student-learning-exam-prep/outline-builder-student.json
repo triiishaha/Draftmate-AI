@@ -1,0 +1,19 @@
+{
+  "id": "outline-builder-student",
+  "name": "Outline Builder",
+  "category": "Student Learning & Exam Prep",
+  "audience": [
+    "student"
+  ],
+  "description": "Build a course outline",
+  "instruction": "Build a hierarchical outline of the topic with headings, key rules, leading cases (marked [VERIFY]) and exam tips.",
+  "needs_document": false,
+  "output": "study",
+  "keywords": [
+    "build",
+    "builder",
+    "course",
+    "outline",
+    "student"
+  ]
+}

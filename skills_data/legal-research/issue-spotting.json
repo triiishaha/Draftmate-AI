@@ -1,0 +1,20 @@
+{
+  "id": "issue-spotting",
+  "name": "Issue Spotting",
+  "category": "Legal Research",
+  "audience": [
+    "lawyer",
+    "student"
+  ],
+  "description": "Spot issues in facts",
+  "instruction": "Spot all legal issues in the fact pattern, grouped by area of law, with one line on why each arises.",
+  "needs_document": false,
+  "output": "analysis",
+  "keywords": [
+    "facts",
+    "issue",
+    "issues",
+    "spot",
+    "spotting"
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "id": "issue-identification",
+  "name": "Issue Identification",
+  "category": "Case & Judgment Tools",
+  "audience": [
+    "lawyer",
+    "student"
+  ],
+  "description": "Identify issues in a judgment",
+  "instruction": "List the issues framed or decided in the judgment in order, with the court's answer to each.",
+  "needs_document": true,
+  "output": "analysis",
+  "keywords": [
+    "identification",
+    "identify",
+    "issue",
+    "issues",
+    "judgment"
+  ]
+}

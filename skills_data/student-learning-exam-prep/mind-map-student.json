@@ -1,0 +1,17 @@
+{
+  "id": "mind-map-student",
+  "name": "Mind Map",
+  "category": "Student Learning & Exam Prep",
+  "audience": [
+    "student"
+  ],
+  "description": "Mind-map a topic",
+  "instruction": "Produce a text mind map of the topic as nested bullets showing relationships between concepts.",
+  "needs_document": false,
+  "output": "study",
+  "keywords": [
+    "mind",
+    "student",
+    "topic"
+  ]
+}

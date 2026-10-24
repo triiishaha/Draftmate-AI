@@ -1,0 +1,20 @@
+{
+  "id": "simplify-legal-language",
+  "name": "Simplify Legal Language",
+  "category": "General Utilities",
+  "audience": [
+    "lawyer",
+    "student"
+  ],
+  "description": "Plain-language rewrite",
+  "instruction": "Rewrite the text in plain language for a non-lawyer without changing the legal meaning. Note any nuance that is lost.",
+  "needs_document": true,
+  "output": "draft",
+  "keywords": [
+    "language",
+    "legal",
+    "plain",
+    "rewrite",
+    "simplify"
+  ]
+}

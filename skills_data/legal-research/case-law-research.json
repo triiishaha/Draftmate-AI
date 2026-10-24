@@ -1,0 +1,18 @@
+{
+  "id": "case-law-research",
+  "name": "Case Law Research",
+  "category": "Legal Research",
+  "audience": [
+    "lawyer",
+    "student"
+  ],
+  "description": "Plan case-law research",
+  "instruction": "Structure the research: issues, search terms, courts and likely authorities. List only authorities you are confident exist and mark each [VERIFY]. Never invent citations.",
+  "needs_document": false,
+  "output": "analysis",
+  "keywords": [
+    "case",
+    "plan",
+    "research"
+  ]
+}

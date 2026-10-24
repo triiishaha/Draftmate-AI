@@ -1,0 +1,18 @@
+{
+  "id": "precedent-analysis",
+  "name": "Precedent Analysis",
+  "category": "Case & Judgment Tools",
+  "audience": [
+    "lawyer"
+  ],
+  "description": "Analyse precedents",
+  "instruction": "Analyse how the cited precedents bear on the issue: binding or persuasive, points of distinction and weaknesses. Mark authorities [VERIFY].",
+  "needs_document": true,
+  "output": "analysis",
+  "keywords": [
+    "analyse",
+    "analysis",
+    "precedent",
+    "precedents"
+  ]
+}

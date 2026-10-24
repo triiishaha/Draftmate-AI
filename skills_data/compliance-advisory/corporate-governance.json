@@ -1,0 +1,18 @@
+{
+  "id": "corporate-governance",
+  "name": "Corporate Governance",
+  "category": "Compliance & Advisory",
+  "audience": [
+    "lawyer"
+  ],
+  "description": "Review governance matters",
+  "instruction": "Review governance points: board and shareholder approvals, filings, related-party matters and records. Flag what needs checking against the company's constitutional documents.",
+  "needs_document": true,
+  "output": "analysis",
+  "keywords": [
+    "corporate",
+    "governance",
+    "matters",
+    "review"
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "id": "compliance-review",
+  "name": "Compliance Review",
+  "category": "Document Review & Analysis",
+  "audience": [
+    "lawyer"
+  ],
+  "description": "Check against a law or policy",
+  "instruction": "Review the document against the stated law or policy. List compliant, non-compliant and unclear points with the provision each refers to.",
+  "needs_document": true,
+  "output": "table",
+  "keywords": [
+    "against",
+    "check",
+    "compliance",
+    "policy",
+    "review"
+  ]
+}

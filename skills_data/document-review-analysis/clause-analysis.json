@@ -1,0 +1,18 @@
+{
+  "id": "clause-analysis",
+  "name": "Clause Analysis",
+  "category": "Document Review & Analysis",
+  "audience": [
+    "lawyer"
+  ],
+  "description": "Explain a clause in depth",
+  "instruction": "Analyse the clause: plain-language meaning, each party's obligations, ambiguities, enforceability concerns and alternative wording.",
+  "needs_document": true,
+  "output": "analysis",
+  "keywords": [
+    "analysis",
+    "clause",
+    "depth",
+    "explain"
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "id": "compare-versions",
+  "name": "Compare Versions",
+  "category": "General Utilities",
+  "audience": [
+    "lawyer",
+    "student"
+  ],
+  "description": "Compare two versions",
+  "instruction": "List what was added, removed and changed between the versions and what each change means.",
+  "needs_document": true,
+  "output": "table",
+  "keywords": [
+    "compare",
+    "versions"
+  ]
+}

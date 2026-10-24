@@ -1,0 +1,21 @@
+{
+  "id": "cold-call-preparation-student",
+  "name": "Cold Call Preparation",
+  "category": "Student Learning & Exam Prep",
+  "audience": [
+    "student"
+  ],
+  "description": "Prepare for class cold calls",
+  "instruction": "Simulate cold-call questions on the case or topic, then give model answers and follow-up questions.",
+  "needs_document": false,
+  "output": "study",
+  "keywords": [
+    "call",
+    "calls",
+    "class",
+    "cold",
+    "preparation",
+    "prepare",
+    "student"
+  ]
+}

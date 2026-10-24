@@ -1,0 +1,18 @@
+{
+  "id": "risk-assessment",
+  "name": "Risk Assessment",
+  "category": "Compliance & Advisory",
+  "audience": [
+    "lawyer"
+  ],
+  "description": "Assess advisory risk",
+  "instruction": "Assess the legal risks of the proposed course of action, rate each, and propose mitigations and alternatives.",
+  "needs_document": false,
+  "output": "table",
+  "keywords": [
+    "advisory",
+    "assess",
+    "assessment",
+    "risk"
+  ]
+}

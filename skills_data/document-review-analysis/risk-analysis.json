@@ -1,0 +1,20 @@
+{
+  "id": "risk-analysis",
+  "name": "Risk Analysis",
+  "category": "Document Review & Analysis",
+  "audience": [
+    "lawyer"
+  ],
+  "description": "Rate legal and commercial risks",
+  "instruction": "Identify risks, rate each High, Medium or Low by likelihood and impact, and suggest mitigation.",
+  "needs_document": true,
+  "output": "table",
+  "keywords": [
+    "analysis",
+    "commercial",
+    "legal",
+    "rate",
+    "risk",
+    "risks"
+  ]
+}
