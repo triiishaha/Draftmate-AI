@@ -1,0 +1,6 @@
+body { margin: 0; background: #fff; }
+@media (prefers-color-scheme: dark) { body { background: #14141a; } }
+.demo-nav { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 10px 16px; font-family: system-ui, sans-serif; background: #1f3a8a; color: #fff; }
+.demo-nav strong { margin-right: 12px; }
+.demo-nav button { padding: 6px 14px; font: inherit; font-size: 0.9rem; cursor: pointer; color: #fff; background: transparent; border: 1px solid rgba(255,255,255,.5); border-radius: 999px; }
+.demo-nav button.on { background: #fff; color: #1f3a8a; }
