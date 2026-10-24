@@ -48,6 +48,21 @@ def test_long_real_titles_match():
                      "Minerva Mills Ltd. & Ors vs Union Of India & Ors on 31 July, 1980") < 0.55
 
 
+def test_naming_variants_in_real_titles():
+    # Indian Kanoon abbreviates / reformats some titles
+    assert _name_sim("Shreya Singhal v. Union of India",
+                     "Shreya Singhal vs U.O.I on 24 March, 2015") >= 0.85
+    assert _name_sim("K.S. Puttaswamy v. Union of India",
+                     "Justice K.S.Puttaswamy(Retd) vs Union Of India on 24 August, 2017") >= 0.85
+    assert _name_sim("K.S. Puttaswamy v. Union of India",
+                     "Justice Puttaswamy vs Union Of India") >= 0.85
+    # still must not match unrelated cases that share generic words
+    assert _name_sim("Rajesh Kumar v. Imaginary Traders Pvt Ltd",
+                     "Rajesh Kumar vs State Of Bihar on 3 May, 2010") < 0.55
+    assert _name_sim("Navtej Singh Johar v. Union of India",
+                     "Article 13 in Constitution of India") == 0.0
+
+
 def test_statuses():
     rep = verify_draft(DRAFT, sources=[FakeSource()])
     assert _by_name(rep, "Kesavananda")["status"] == "verified"

@@ -252,11 +252,16 @@ def _name_sim(a: str, b: str) -> float:
         return 0.0
     ratio = SequenceMatcher(None, a, b).ratio()
     contain = 1.0 if a in b or b in a else 0.0
-    ta, tb = set(a.split()), set(b.split())
+    # initials ("K.S.", "U.O.I") are written differently everywhere, so ignore 1-letter tokens
+    ta = {t for t in a.split() if len(t) > 1}
+    tb = {t for t in b.split() if len(t) > 1}
+    if not ta:
+        return 0.0
     coverage = len(ta & tb) / len(ta)
     key = {t for t in ta if t not in PARTY_STOPWORDS}
     key_cov = len(key & tb) / len(key) if key else coverage
-    token_score = 0.95 * coverage * key_cov          # a missing key word drags it down fast
+    # distinctive words decide; generic words ('union', 'india') only nudge the score
+    token_score = 0.95 * key_cov * (0.85 + 0.15 * coverage)
     if key_cov < 0.5:
         return 0.0       # titles sharing only generic words ("India", "Union") never count
     return max(ratio, 0.9 * contain, token_score)
