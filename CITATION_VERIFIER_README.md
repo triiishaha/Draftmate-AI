@@ -1,0 +1,134 @@
+# Citation Verification Module
+
+Checks every case and statute cited in a draft against Indian Kanoon and labels each one
+**verified / partially_verified / unverified**, with a source link. It never invents an authority.
+Human review stays central: "verified" means the authority exists under that name and year,
+not that it supports the point the draft makes.
+
+## Files
+
+| File | Purpose |
+|---|---|
+| `citation_verifier.py` | The module (extraction, lookup, scoring, suggestions, FastAPI router) |
+| `test_citation_verifier.py` | 14 offline tests (no token or internet needed) |
+| `build_cache.py` | One-off script that builds `legal_cache.json` for offline demos |
+| `demo_draft.txt` | Demo legal notice: 6 real cases, 2 statutes, 1 wrong year, 1 invented case |
+| `legal_cache.json` | Saved Indian Kanoon results for the demo draft |
+
+## Setup
+
+```
+pip3 install requests pytest fastapi uvicorn
+export INDIANKANOON_API_TOKEN=<token>      # backend only, NEVER in frontend or git
+python3 -m pytest -q test_citation_verifier.py     # expect: 14 passed
+```
+
+Optional LLM pass (finds citations the regex misses): set `ANTHROPIC_API_KEY`, or pass your own
+`completer=` function (prompt in, text out). Without it everything still works.
+
+## Backend: mount the route
+
+```python
+from citation_verifier import router
+app.include_router(router)
+```
+
+Run the server from the folder that contains `legal_cache.json`.
+
+## API
+
+`POST /verify`
+
+Request:
+```json
+{ "text": "See Vishaka v. State of Rajasthan, AIR 1999 SC 3011." }
+```
+
+Response (one entry in `items` per citation found):
+```json
+{
+  "summary": { "verified": 0, "partially_verified": 1, "unverified": 0 },
+  "items": [
+    {
+      "citation": {
+        "raw": "Vishaka v. State of Rajasthan, AIR 1999 SC 3011",
+        "kind": "case",
+        "name": "Vishaka v. State of Rajasthan",
+        "year": "1999",
+        "reporter": "AIR",
+        "court": "SC",
+        "section": null,
+        "act": null,
+        "span": [4, 51]
+      },
+      "status": "partially_verified",
+      "score": 0.7,
+      "reasons": [
+        "name similarity 0.95 with 'Vishaka & Ors vs State Of Rajasthan & Ors on 13 August, 1997'",
+        "year mismatch: draft says 1999, source says 1997"
+      ],
+      "source": {
+        "title": "Vishaka & Ors vs State Of Rajasthan & Ors on 13 August, 1997",
+        "url": "https://indiankanoon.org/doc/1031794/",
+        "year": "1997",
+        "court": "Supreme Court of India",
+        "snippet": ""
+      },
+      "suggestion": {
+        "message": "The case exists, but the source dates it 1997, not 1999. Closest authority: ...",
+        "replace_with": "Vishaka v. State of Rajasthan, AIR 1997 SC 3011",
+        "source_url": "https://indiankanoon.org/doc/1031794/"
+      }
+    }
+  ]
+}
+```
+
+### Field notes
+
+| Field | Meaning |
+|---|---|
+| `status` | `verified` (score 0.85+), `partially_verified` (0.55 to 0.85), `unverified` (below 0.55 or nothing found) |
+| `score` | 0 to 1 confidence in the match |
+| `reasons` | Plain-English list of why. Show it when the user clicks an item |
+| `source` | Closest real authority and link. `null` when unverified |
+| `citation.span` | `[start, end]` character positions in the submitted text, for highlighting |
+| `suggestion` | `null` unless partially verified. See below |
+| `citation.kind` | `case` or `statute` (Acts, Codes, Articles of the Constitution) |
+
+## Frontend guidance
+
+- **Colours:** verified = green, partially_verified = amber, unverified = red.
+- **Highlight** each citation in the draft using `citation.span`.
+- **Review panel:** list the items. On click show `reasons`, the `source.url` link and `suggestion.message`.
+- **Apply fix button:** show only when `suggestion.replace_with` is not null. It replaces the text at
+  `citation.span` with `replace_with`. It fixes the year only, so keep the message telling the user to
+  check the reporter reference. **Call `/verify` again after applying**, because later spans shift.
+- **Unverified:** show a clear warning, for example "No matching authority found. Do not rely on it."
+- Call `/verify` from a **Verify button**, not on every keystroke (each call may cost money and takes seconds).
+
+## Demo checklist
+
+1. Paste `demo_draft.txt` into the draft box and click Verify.
+2. Expected: 7 verified, 1 partially verified (Vishaka, wrong year, with Apply fix), 1 unverified (invented case).
+3. Works offline from `legal_cache.json` for the demo citations; unknown citations fall back to the live API.
+4. To change the demo draft: edit `demo_draft.txt`, then run `python3 -W ignore build_cache.py demo_draft.txt`
+   (needs the token; costs a few rupees) and commit the new `legal_cache.json`.
+
+## How it works (for judges)
+
+1. **Extract:** regex finds cases (with or without reporter citations), Acts/sections and Constitution articles.
+   An optional LLM pass finds the rest. The LLM only finds citations. Anything it reports must quote the draft
+   word for word, or it is dropped.
+2. **Look up:** local cache first, then the Indian Kanoon API (`title:` filter for cases, `section/article N` for laws).
+3. **Score:** matches on the distinctive words of the case name, then checks year (case) or section (statute).
+   Generic words ("Union", "India") and initials never count as a match on their own.
+4. **Label and explain:** every status comes with reasons and a source link. Network failure means unverified,
+   never a false pass.
+
+## Known limits
+
+- Verified means the authority exists, not that it supports the draft's argument. A lawyer must review.
+- Statute checks confirm the Act and the section number appear in the source title, not the section text.
+- Regex plus the optional LLM pass can still miss unusual citation formats.
+- Coverage is limited to what Indian Kanoon holds.
