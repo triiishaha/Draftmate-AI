@@ -257,6 +257,8 @@ def _name_sim(a: str, b: str) -> float:
     key = {t for t in ta if t not in PARTY_STOPWORDS}
     key_cov = len(key & tb) / len(key) if key else coverage
     token_score = 0.95 * coverage * key_cov          # a missing key word drags it down fast
+    if key_cov < 0.5:
+        return 0.0       # titles sharing only generic words ("India", "Union") never count
     return max(ratio, 0.9 * contain, token_score)
 
 
