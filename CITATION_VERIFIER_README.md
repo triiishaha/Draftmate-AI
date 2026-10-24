@@ -17,13 +17,16 @@ not that it supports the point the draft makes.
 | `research.py` | `GET /research` search route (real Indian Kanoon results only) |
 | `test_research.py` | 5 offline tests for the search route |
 | `Research.js`, `Research.css` | React Legal Research page (search, results, citation checker) |
+| `contract_intel.py`, `test_contract_intel.py` | Redline, compare and deadline routes with 12 tests |
+| `ContractIntelligence.js/.css`, `Productivity.js/.css` | React pages for Member 3's module |
+| `demo/` | Prebuilt bundle of all three pages, served at `/demo` |
 
 ## Setup
 
 ```
 pip3 install requests pytest fastapi uvicorn
 export INDIANKANOON_API_TOKEN=<token>      # backend only, NEVER in frontend or git
-python3 -m pytest -q test_citation_verifier.py     # expect: 28 passed
+python3 -m pytest -q test_citation_verifier.py     # expect: 40 passed
 ```
 
 Optional LLM pass (finds citations the regex misses): set `ANTHROPIC_API_KEY`, or pass your own
@@ -197,3 +200,51 @@ The "Check a citation" panel calls `POST /verify` and shows:
 - **Apply fix** (only when `suggestion.replace_with` exists): replaces the text at the span, then calls `/verify` again.
   If the text at the span no longer matches `citation.raw` it does not edit, it just re-checks.
 - if the user edits the draft after a check, a note asks them to re-check and Apply fix is disabled
+
+## Contract Intelligence (Member 3 core): redline, compare, deadlines
+
+`contract_intel.py` is plain text analysis. **No AI model is used**, so nothing can be invented, and every
+result quotes the contract's own words. Mount: `app.include_router(contract_router)` (already in `main.py`).
+
+| Route (POST, JSON) | Input | Returns |
+|---|---|---|
+| `/contract/redline` | `{old, new}` | `summary` + `changes[]`: `kind` (added / removed / modified / unchanged), `segments[]` (word diff: equal / delete / insert), `topics`, `details` ("Notice period: 30 days → 60 days"), `review` |
+| `/contract/compare` | `{a, b}` | `rows[]`: `topic`, `status` (same / changed / only_a / only_b), `a` and `b` with `value` and `quote`, `review` |
+| `/contract/deadlines` | `{text, start_date?}` | `items[]`: `type`, `party`, `text` (source sentence), `date`, `days_left`, `status`, `relative`, `recurring`, `is_obligation` |
+
+Rules worth knowing:
+- `review: true` marks a change to money, notice, termination, non-compete, penalty, liability or governing law. It is a
+  prompt to look closely, not a legal opinion.
+- Deadline `status`: overdue, due_soon (30 days), upcoming, needs_start_date, event_based, notice_period, recurring, undated.
+  "30 days' notice" is a **notice period**, never a due date. "Within 15 days of joining" is dated from the optional
+  effective date. "Within 10 days of receipt of invoice" is **event_based** and never dated.
+- Numeric dates are read as DD/MM/YYYY. Impossible dates (31/02/2026) are ignored. Input is capped at 200,000 characters.
+- Not built yet: Risk Radar, Legal Change Impact Map, Templates & Version History.
+
+Frontend files: `ContractIntelligence.js/.css` (Smart Redline + Compare key terms) and `Productivity.js/.css`
+(Deadline & Obligation Tracker with Done checkboxes saved in the browser, and a calendar `.ics` download).
+They use the same one-line `API` constant as `Research.js`.
+
+### Demo of all three pages (no React setup)
+Keep the `demo/` folder next to `main.py` (it holds `app.js`, `app.css`, `index.html`) and open
+`http://localhost:8000/demo`. It is a prebuilt bundle of the real components, not a copy. If you change a component,
+rebuild with esbuild: `esbuild demo/entry.js --bundle --minify --loader:.js=jsx --define:process.env.NODE_ENV='"production"' --outfile=demo/app.js`
+(needs `npm i react react-dom esbuild`).
+
+## Member 3 additions: Risk Radar, Law change impact, Templates and Version history
+
+New files: `risk_radar.py`, `impact_map.py`, `doc_store.py` (+ tests). `main.py` already includes their routers.
+
+| Route | What it does |
+|---|---|
+| POST `/contract/risk` `{text}` | Risk score, six-axis radar, findings with quotes, why, what to ask for, Indian-law pointers |
+| GET `/contract/laws` | Laws the impact map knows |
+| POST `/contract/impact` `{text, law, change?}` | Which clauses deal with the subjects a law covers, plus real sources from Indian Kanoon |
+| GET/POST `/store/templates`, GET/DELETE `/store/templates/{id}` | Approved templates (name clash returns 409 unless `replace: true`) |
+| GET/POST `/store/documents`, GET/POST `/store/documents/{id}/versions`, GET `.../versions/{n}`, GET `.../diff?a=&b=`, POST `.../restore` | Append-only version history; restore creates a new version |
+
+Notes
+- The store is SQLite in `draftmate_store.db` next to `main.py` (change with env `DRAFTMATE_DB`). There is no login in this demo, so do not expose it publicly.
+- The impact map never says a law changed. You name the law; it shows matching clauses and sources.
+- React: `ContractIntelligence.js` has Risk Radar and Law change impact tabs; `Productivity.js` has Deadlines, Templates and Version history tabs (it imports `RedlineResult` from `ContractIntelligence.js`, so give your frontend teammate both files and both CSS files).
+- Everything is rule-based. No AI key is needed for any of this.

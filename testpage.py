@@ -22,3 +22,22 @@ def test_page():
 @router.get("/Research.css", include_in_schema=False)
 def research_css():
     return FileResponse(os.path.join(HERE, "Research.css"), media_type="text/css")
+
+
+# Demo of all three pages (Research, Contract Intelligence, Deadline Tracker): open http://localhost:8000/demo
+DEMO = os.path.join(HERE, "demo")
+
+
+@router.get("/demo", include_in_schema=False)
+def demo_page():
+    return FileResponse(os.path.join(DEMO, "index.html"))
+
+
+@router.get("/demo/app.js", include_in_schema=False)
+def demo_js():
+    return FileResponse(os.path.join(DEMO, "app.js"), media_type="application/javascript")
+
+
+@router.get("/demo/app.css", include_in_schema=False)
+def demo_css():
+    return FileResponse(os.path.join(DEMO, "app.css"), media_type="text/css")
