@@ -117,6 +117,42 @@ def test_names_do_not_swallow_neighbouring_sentences():
     assert t[b.span[0]:b.span[1]] == "Bandhua Mukti Morcha v. Union of India"
 
 
+def test_suggestion_for_wrong_year():
+    class Src:
+        def search(self, c):
+            return [SourceHit("Vishaka And Ors vs State Of Rajasthan And Ors on 13 August, 1997",
+                              "https://indiankanoon.org/doc/1031794/", "1997", "Supreme Court of India")]
+    c = extract_citations("See Vishaka v. State of Rajasthan, AIR 1999 SC 3011.")[0]
+    v = verify_citation(c, [Src()])
+    assert v.status == "partially_verified"
+    s = v.suggestion
+    assert "1997" in s["message"] and "1999" in s["message"]
+    assert s["replace_with"] == "Vishaka v. State of Rajasthan, AIR 1997 SC 3011"
+    assert s["source_url"].endswith("/1031794/")
+
+
+def test_no_suggestion_when_verified_or_unverified():
+    rep = verify_draft(DRAFT, sources=[FakeSource()])
+    for i in rep["items"]:
+        if i["status"] in ("verified", "unverified"):
+            assert i["suggestion"] is None
+
+
+def test_suggestion_never_rewrites_when_name_is_shaky():
+    class Src:
+        def search(self, c):
+            return [SourceHit("Shreya Singhal vs Union Of India on 24 March, 2015", "u", "2015")]
+    c = Citation(raw="Shreya Singhal v. Union of India (2012) 5 SCC 1", kind="case",
+                 name="Shreya Singhal v. Union of India", year="2012")
+    v = verify_citation(c, [Src()])
+    assert v.suggestion["replace_with"] == "Shreya Singhal v. Union of India (2015) 5 SCC 1"
+    # an unrelated name must get no suggestion and no source, however similar the year looks
+    c2 = Citation(raw="Totally Different v. Union of India (2015) 5 SCC 1", kind="case",
+                  name="Totally Different v. Union of India", year="2015")
+    v2 = verify_citation(c2, [Src()])
+    assert v2.status == "unverified" and v2.suggestion is None and v2.source is None
+
+
 def test_article_regex_without_llm():
     cites = extract_citations("Article 21 of the Constitution of India applies.")
     assert cites[0].kind == "statute" and cites[0].section == "21"

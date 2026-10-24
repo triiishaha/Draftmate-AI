@@ -58,6 +58,9 @@ class Verdict:
     score: float                 # 0..1 confidence
     reasons: list[str] = field(default_factory=list)
     source: SourceHit | None = None
+    # For partial matches: what the closest real authority says, and (when safe) a one-click fix.
+    # {"message": str, "replace_with": str | None, "source_url": str}
+    suggestion: dict | None = None
 
 
 # ----------------------------------------------------------------------------
@@ -340,7 +343,7 @@ def _year_from(s: str | None) -> str | None:
 
 
 def verify_citation(c: Citation, sources: list[Source]) -> Verdict:
-    best: tuple[float, SourceHit, list[str]] | None = None
+    best: tuple[float, SourceHit, list[str], str | None, float] | None = None
 
     for src in sources:
         for hit in src.search(c):
@@ -348,6 +351,7 @@ def verify_citation(c: Citation, sources: list[Source]) -> Verdict:
             sim = _name_sim(key, hit.title)
             reasons = [f"name similarity {sim:.2f} with '{hit.title}'"]
             score = sim
+            flag: str | None = None       # why this match is not perfect (drives the suggestion)
 
             if c.kind == "case" and c.year:
                 if hit.year and hit.year == c.year:
@@ -356,12 +360,14 @@ def verify_citation(c: Citation, sources: list[Source]) -> Verdict:
                 elif hit.year:
                     reasons.append(f"year mismatch: draft says {c.year}, source says {hit.year}")
                     score -= 0.25
+                    flag = "year_mismatch"
                 else:
                     reasons.append("source gave no year to compare")
                     score -= 0.05
             elif c.kind == "case":
                 reasons.append("draft gave no year, so only the name could be checked")
                 score -= 0.1
+                flag = "no_year"
 
             if c.kind == "statute" and c.section:
                 w = _provision_word(c)
@@ -371,9 +377,10 @@ def verify_citation(c: Citation, sources: list[Source]) -> Verdict:
                 else:
                     reasons.append(f"Act found but {w} {c.section} not confirmed in title")
                     score -= 0.2
+                    flag = "section_unconfirmed"
 
             if best is None or score > best[0]:
-                best = (score, hit, reasons)
+                best = (score, hit, reasons, flag, sim)
         if best and best[0] >= 0.85:
             break  # good enough, skip slower/paid sources
 
@@ -381,7 +388,7 @@ def verify_citation(c: Citation, sources: list[Source]) -> Verdict:
         return Verdict(c, "unverified", 0.0,
                        ["no matching authority found in any accessible source; do not rely on it"])
 
-    score, hit, reasons = best
+    score, hit, reasons, flag, sim = best
     score = max(0.0, min(1.0, score))
     if score >= 0.85:
         status = "verified"
@@ -389,7 +396,34 @@ def verify_citation(c: Citation, sources: list[Source]) -> Verdict:
         status = "partially_verified"
     else:
         status = "unverified"
-    return Verdict(c, status, round(score, 2), reasons, hit if status != "unverified" else None)
+    suggestion = _suggest(c, hit, flag, sim) if status == "partially_verified" else None
+    return Verdict(c, status, round(score, 2), reasons, hit if status != "unverified" else None,
+                   suggestion)
+
+
+def _suggest(c: Citation, hit: SourceHit, flag: str | None, sim: float) -> dict:
+    """Turn a partial match into advice. A text replacement is offered ONLY when the case name
+    clearly matches and the year is the single problem; everything else is advice to a human."""
+    url = hit.url
+    if flag == "year_mismatch" and c.kind == "case" and sim >= 0.8 and c.year and hit.year:
+        fixed = c.raw.replace(c.year, hit.year, 1) if c.year in c.raw else None
+        return {
+            "message": (f"The case exists, but the source dates it {hit.year}, not {c.year}. "
+                        f"Closest authority: {hit.title}. Check the reporter reference too."),
+            "replace_with": fixed,
+            "source_url": url,
+        }
+    if flag == "no_year":
+        return {"message": f"Found a likely match: {hit.title}. Add the year and reporter citation "
+                           f"so the authority can be fully confirmed.",
+                "replace_with": None, "source_url": url}
+    if flag == "section_unconfirmed":
+        w = _provision_word(c)
+        return {"message": f"The Act was found, but {w} {c.section} could not be confirmed from "
+                           f"the source. Open the source and check the provision number.",
+                "replace_with": None, "source_url": url}
+    return {"message": f"Closest match found: {hit.title}. Please check it against your draft.",
+            "replace_with": None, "source_url": url}
 
 
 # ----------------------------------------------------------------------------
