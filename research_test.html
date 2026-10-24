@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Legal Research test page</title>
+<link rel="stylesheet" href="/Research.css">
+<style>body{margin:0;background:#fff}@media (prefers-color-scheme:dark){body{background:#14141a}}</style>
+</head>
+<body>
+<!-- Plain-JS twin of Research.js: same classes, same wording, same API calls.
+     Served by the backend at /test, so no React setup and no CORS needed. -->
+<main class="rs-page" id="app">
+  <header class="rs-header">
+    <h1>Legal Research</h1>
+    <p class="rs-muted">Every result is a real document from Indian Kanoon, with a link. Nothing is written by an AI.</p>
+  </header>
+
+  <form class="rs-search" id="form" role="search">
+    <input class="rs-input" id="q" type="search" placeholder="Search a topic, a law or a case name"
+           aria-label="Search legal topics, laws or case names">
+    <button class="rs-btn" id="go" type="submit" disabled>Search</button>
+  </form>
+
+  <div class="rs-tabs" id="tabs" role="tablist" aria-label="Result type"></div>
+  <div class="rs-examples" id="examples"><span class="rs-muted">Try:</span></div>
+  <p class="rs-error" id="err" role="alert" hidden></p>
+  <p class="rs-muted" id="busy" aria-live="polite" hidden>Searching Indian Kanoon…</p>
+  <section id="out" aria-live="polite"></section>
+
+  <section class="rs-panel" aria-labelledby="cc-title">
+    <h2 id="cc-title">Check a citation</h2>
+    <p class="rs-muted">Paste a sentence or paragraph. Each case and section is matched against Indian Kanoon.</p>
+    <textarea class="rs-textarea" id="cc" rows="4"
+      placeholder="e.g. See Vishaka v. State of Rajasthan, AIR 1999 SC 3011."></textarea>
+    <button class="rs-btn" id="ccgo" disabled>Check citations</button>
+    <p class="rs-error" id="ccerr" role="alert" hidden></p>
+    <div id="ccout"></div>
+  </section>
+  <footer class="rs-footer">Case data: Indian Kanoon API.</footer>
+</main>
+
+<script>
+const TYPES = [["all","All"],["supremecourt","Supreme Court"],["laws","Laws & sections"]];
+const EXAMPLES = ["breach of contract","Maneka Gandhi v. Union of India","Section 138 Negotiable Instruments Act","right to privacy"];
+const STATUS = {verified:["Verified","ok"], partially_verified:["Needs Review","warn"], unverified:["Not Found","bad"]};
+let type = "all";
+const $ = id => document.getElementById(id);
+
+// tiny element helper: text is always set with textContent, never as HTML
+function el(tag, cls, text, attrs) {
+  const n = document.createElement(tag);
+  if (cls) n.className = cls;
+  if (text != null) n.textContent = text;
+  for (const k in (attrs || {})) n.setAttribute(k, attrs[k]);
+  return n;
+}
+function link(href, text) {
+  return el("a", "rs-link", text, {href, target: "_blank", rel: "noopener noreferrer"});
+}
+async function api(path, options) {
+  const res = await fetch(path, options);
+  if (!res.ok) throw new Error("Server returned " + res.status);
+  return res.json();
+}
+
+let terms = [], page = 0, shown = 0;
+function highlight(text, cls) {
+  const box = el("span", cls);
+  const ts = terms.filter(t => t.length > 2).map(t => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+  if (!ts.length) { box.textContent = text; return box; }
+  text.split(new RegExp("(" + ts.join("|") + ")", "gi")).forEach((part, i) => {
+    if (i % 2) box.append(el("mark", "rs-mark", part)); else box.append(part);
+  });
+  return box;
+}
+
+function drawTabs() {
+  const box = $("tabs"); box.replaceChildren();
+  for (const [id, label] of TYPES) {
+    const b = el("button", "rs-tab" + (type === id ? " on" : ""), label, {role: "tab", "aria-selected": String(type === id), type: "button"});
+    b.onclick = () => { type = id; drawTabs(); if ($("q").value.trim().length >= 2) search(); };
+    box.append(b);
+  }
+}
+for (const x of EXAMPLES) {
+  const b = el("button", "rs-chip", x, {type: "button"});
+  b.onclick = () => { $("q").value = x; sync(); search(); };
+  $("examples").append(b);
+}
+function sync() { $("go").disabled = $("q").value.trim().length < 2; }
+$("q").oninput = sync;
+
+function card(r) {
+  const a = el("article", "rs-card");
+  const top = el("div", "rs-card-top");
+  top.append(el("span", "rs-kind " + r.kind, r.kind === "law" ? "Law" : "Judgment"));
+  if (r.court) top.append(el("span", "rs-meta", r.court));
+  if (r.year) top.append(el("span", "rs-meta", r.year));
+  const t = el("h3", "rs-title"); t.append(highlight(r.title));
+  a.append(top, t);
+  const p = el("p", "rs-snippet" + (r.snippet ? "" : " rs-muted"));
+  if (r.snippet) { p.append(el("span", "rs-snippet-label", "Extract from source"), highlight(r.snippet)); }
+  else p.textContent = "No extract returned. Open the source to read it.";
+  a.append(p, link(r.url, "Open source on Indian Kanoon ↗"));
+  return a;
+}
+
+async function search(more) {
+  const term = $("q").value.trim();
+  if (term.length < 2) return;
+  more = more === true;
+  page = more ? page + 1 : 0;
+  $("err").hidden = true; $("busy").hidden = false; $("examples").hidden = true;
+  if (!more) { $("out").replaceChildren(); shown = 0; terms = term.split(/\s+/); }
+  $("go").disabled = true; $("go").textContent = "Searching…";
+  const moreBtn = $("more"); if (moreBtn) moreBtn.disabled = true;
+  try {
+    const res = await api("/research?q=" + encodeURIComponent(term) + "&type=" + type + "&page=" + page);
+    if (!more) {
+      $("out").append(el("p", "rs-count", ""), el("div", "rs-results", null, {id: "list"}));
+      if (res.note) $("out").insertBefore(el("p", "rs-note", res.note), $("list"));
+    }
+    shown += res.count;
+    $("out").querySelector(".rs-count").textContent = shown + " result" + (shown === 1 ? "" : "s") + " for “" + res.query + "”";
+    res.results.forEach(r => $("list").append(card(r)));
+    if ($("more")) $("more").remove();
+    if (res.has_more) {
+      const b = el("button", "rs-btn rs-more", "Load more results", {id: "more", type: "button"});
+      b.onclick = () => search(true);
+      $("out").append(b);
+    } else if (more && res.note) {
+      $("out").append(el("p", "rs-muted rs-end", res.note));
+    }
+  } catch (e) {
+    page = more ? page - 1 : page;
+    $("err").textContent = "Search failed. Is the backend running?"; $("err").hidden = false;
+    if (moreBtn) moreBtn.disabled = false;
+  } finally {
+    $("busy").hidden = true; $("go").textContent = "Search"; sync();
+  }
+}
+$("form").onsubmit = e => { e.preventDefault(); search(); };
+
+$("cc").oninput = () => { $("ccgo").disabled = !$("cc").value.trim(); };
+$("ccgo").onclick = async () => {
+  const text = $("cc").value;
+  $("ccerr").hidden = true; $("ccout").replaceChildren();
+  $("ccgo").disabled = true; $("ccgo").textContent = "Checking…";
+  try {
+    const d = await api("/verify", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({text})});
+    const out = $("ccout"), wrap = el("div", "rs-verdicts");
+    const sum = el("p", "rs-summary");
+    const s = d.summary;
+    const b = (n, c) => el("b", c, String(n));
+    sum.append(b(s.verified, "ok"), " Verified · ", b(s.partially_verified, "warn"), " Needs Review · ", b(s.unverified, "bad"), " Not Found");
+    wrap.append(sum);
+    if (!d.items.length) wrap.append(el("p", "rs-muted", "No citations found in this text."));
+    for (const it of d.items) {
+      const [label, cls] = STATUS[it.status];
+      const v = el("div", "rs-verdict " + cls);
+      const head = el("div", "rs-verdict-head");
+      head.append(el("span", "rs-badge " + cls, label), el("span", "rs-verdict-name", it.citation.raw));
+      const ul = el("ul", "rs-reasons"); it.reasons.forEach(x => ul.append(el("li", null, x)));
+      v.append(head, ul);
+      if (it.source) v.append(link(it.source.url, it.source.title + " ↗"));
+      if (it.status === "unverified") v.append(el("p", "rs-warning", "No matching authority found. Do not rely on it."));
+      if (it.suggestion) v.append(el("p", "rs-suggest", it.suggestion.message));
+      wrap.append(v);
+    }
+    wrap.append(el("p", "rs-muted rs-fine", "\"Verified\" means the authority exists under that name and year. It does not mean it supports your argument. A lawyer must review."));
+    out.append(wrap);
+  } catch (e) {
+    $("ccerr").textContent = "Could not reach the verifier. Is the backend running?"; $("ccerr").hidden = false;
+  } finally {
+    $("ccgo").textContent = "Check citations"; $("ccgo").disabled = !$("cc").value.trim();
+  }
+};
+drawTabs();
+</script>
+</body>
+</html>

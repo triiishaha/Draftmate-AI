@@ -14,13 +14,16 @@ not that it supports the point the draft makes.
 | `build_cache.py` | One-off script that builds `legal_cache.json` for offline demos |
 | `demo_draft.txt` | Demo legal notice: 6 real cases, 2 statutes, 1 wrong year, 1 invented case |
 | `legal_cache.json` | Saved Indian Kanoon results for the demo draft |
+| `research.py` | `GET /research` search route (real Indian Kanoon results only) |
+| `test_research.py` | 5 offline tests for the search route |
+| `Research.js`, `Research.css` | React Legal Research page (search, results, citation checker) |
 
 ## Setup
 
 ```
 pip3 install requests pytest fastapi uvicorn
 export INDIANKANOON_API_TOKEN=<token>      # backend only, NEVER in frontend or git
-python3 -m pytest -q test_citation_verifier.py     # expect: 14 passed
+python3 -m pytest -q test_citation_verifier.py     # expect: 19 passed
 ```
 
 Optional LLM pass (finds citations the regex misses): set `ANTHROPIC_API_KEY`, or pass your own
@@ -132,3 +135,29 @@ Response (one entry in `items` per citation found):
 - Statute checks confirm the Act and the section number appear in the source title, not the section text.
 - Regex plus the optional LLM pass can still miss unusual citation formats.
 - Coverage is limited to what Indian Kanoon holds.
+
+## Legal Research page (search)
+
+Backend (`main.py`):
+```python
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from citation_verifier import router as verify_router
+from research import router as research_router
+
+app = FastAPI()
+app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:3000"],
+                   allow_methods=["*"], allow_headers=["*"])
+app.include_router(verify_router)
+app.include_router(research_router)
+```
+
+`GET /research?q=breach of contract&type=all|supremecourt|laws&page=0` returns
+`{query, count, results:[{title, url, court, year, snippet, kind}], origin, note}`.
+`origin` is `indiankanoon` (live) or `cache` (offline demo). Nothing is AI-generated:
+`snippet` is the extract Indian Kanoon returned.
+
+Frontend: copy `Research.js` and `Research.css` into `src/`, route to `<Research />`.
+Set `REACT_APP_API_URL` if the backend is not on `http://localhost:8000`.
+The page also has a "Check a citation" box that calls `/verify`. Status wording in the UI:
+verified = Verified, partially_verified = Needs Review, unverified = Not Found.
