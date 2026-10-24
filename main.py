@@ -7,7 +7,8 @@ from testpage import router as test_router
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    # 3000 = Create React App / Next, 5173 = Vite. Add your frontend's port if it differs.
+    allow_origins=["http://localhost:3000", "http://localhost:5173"],
     allow_methods=["*"],
     allow_headers=["*"],
 )

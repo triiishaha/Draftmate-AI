@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import "./Research.css";
 
-// Backend address. Set REACT_APP_API_URL in .env if the backend is not on port 8000.
-const API = process.env.REACT_APP_API_URL || "http://localhost:8000";
+// Backend address. Change this one line if the Python backend is not on port 8000.
+// (Plain constant on purpose: works in Create React App, Vite and Next without env setup.)
+const API = "http://localhost:8000";
 
 // UI wording the brief asks for. The API keeps its own status names.
 const STATUS = {

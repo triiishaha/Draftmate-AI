@@ -158,7 +158,7 @@ app.include_router(research_router)
 `snippet` is the extract Indian Kanoon returned.
 
 Frontend: copy `Research.js` and `Research.css` into `src/`, route to `<Research />`.
-Set `REACT_APP_API_URL` if the backend is not on `http://localhost:8000`.
+Edit the `API` constant at the top of `Research.js` if the backend is not on `http://localhost:8000`. In a Vite project, rename the file to `Research.jsx`.
 The page also has a "Check a citation" box that calls `/verify`. Status wording in the UI:
 verified = Verified, partially_verified = Needs Review, unverified = Not Found.
 
