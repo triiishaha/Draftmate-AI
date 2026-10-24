@@ -21,7 +21,7 @@ import os
 import re
 from dataclasses import dataclass, field, asdict
 from difflib import SequenceMatcher
-from typing import Protocol
+from typing import Callable, Protocol
 
 import requests
 
@@ -88,15 +88,66 @@ STATUTE = re.compile(
 
 
 LEADING_NOISE = {"see", "also", "cf", "vide", "per", "in", "and", "but", "however",
-                 "compare", "reliance", "held", "as", "thus", "hence", "further"}
+                 "compare", "reliance", "held", "as", "thus", "hence", "further",
+                 "refer", "relied", "rely", "note", "noted", "accordingly", "similarly",
+                 "therefore", "moreover", "furthermore", "additionally", "finally", "here",
+                 "then", "now", "following", "followed", "applying", "citing", "cited",
+                 "recall", "consider", "considering", "examine", "observe", "observed"}
+
+
+# Short forms that end in a full stop but do NOT end a sentence ("Mohd. Ahmed Khan", "Pvt. Ltd.")
+ABBREV = {"mohd", "smt", "shri", "shrimati", "messrs", "prof", "govt", "addl", "dept", "corpn",
+          "assn", "secy", "commr", "ltd", "pvt", "bros", "engg", "mfg", "co", "anr", "ors",
+          "dr", "mr", "mrs", "ms", "sri", "md", "inc", "no", "vs", "ltd"}
+
+
+def _is_sentence_end(word: str, nxt: str | None) -> bool:
+    if not word.endswith(".") or not nxt or not nxt[:1].isupper():
+        return False
+    if re.fullmatch(r"(?:[A-Za-z]\.)+", word):          # initials: K.S.  U.O.I.
+        return False
+    stem = word.rstrip(".")
+    return len(stem) >= 3 and stem.lower() not in ABBREV
 
 
 def _clean_name(name: str) -> str:
-    """Drop sentence words glued to the front of a case name ('See Maneka Gandhi v. ...')."""
-    words = name.split()
-    while len(words) > 3 and words[0].lower().strip(".,:;") in LEADING_NOISE:
-        words.pop(0)
-    return " ".join(words)
+    """Trim sentence words stuck to a case name: a lead-in ('See Maneka Gandhi v. ...'),
+    the end of the PREVIOUS sentence ('...of India. Refer X v. Y'), or the start of the NEXT."""
+    parts = re.split(rf"\s+({V})\s+", name.strip(), maxsplit=1)
+    if len(parts) == 3:
+        left, sep, right = parts
+    else:
+        left, sep, right = name, None, ""
+    lw, rw = left.split(), right.split()
+    cuts = [i for i in range(len(lw) - 1) if _is_sentence_end(lw[i], lw[i + 1])]
+    if cuts:                                              # keep text after the LAST sentence break
+        lw = lw[cuts[-1] + 1:]
+    for i in range(len(rw) - 1):                          # keep text before the FIRST break
+        if _is_sentence_end(rw[i], rw[i + 1]):
+            rw = rw[:i + 1]
+            break
+    if rw and rw[-1].endswith(".") and not re.fullmatch(r"(?:[A-Za-z]\.)+", rw[-1]) \
+            and rw[-1].rstrip(".").lower() not in ABBREV:
+        rw[-1] = rw[-1].rstrip(".")                        # trailing full stop of the sentence
+    while len(lw) >= 2 and lw[0].lower().strip(".,:;") in LEADING_NOISE:
+        lw.pop(0)
+    return " ".join(lw) if sep is None else f"{' '.join(lw)} {sep} {' '.join(rw)}"
+
+
+def _locate(m: re.Match, name: str, keep_tail: bool) -> tuple[int, int]:
+    """Span of the cleaned name inside the regex match (so highlights are exact)."""
+    s, e = m.span()
+    pat = r"\s+".join(re.escape(w) for w in name.split())
+    mm = re.search(pat, m.group(0))
+    if not mm:
+        return s, e
+    return s + mm.start(), (e if keep_tail else s + mm.end())
+
+
+# "Article 21 of the Constitution of India" / "Article 19(1)(a) of the Constitution"
+ARTICLE = re.compile(
+    r"Article\s+(?P<sec>\d+[A-Z]?(?:\(\d+\))?(?:\([a-z]\))?)\s+of\s+the\s+Constitution(?:\s+of\s+India)?"
+)
 
 
 def extract_citations(text: str) -> list[Citation]:
@@ -109,18 +160,28 @@ def extract_citations(text: str) -> list[Citation]:
     for m in CASE_WITH_CITE.finditer(text):
         year = m.group("y1") or m.group("y2") or m.group("y3")
         rep = m.group("rep1") or m.group("rep2") or m.group("rep3")
+        name = _clean_name(m.group("name").strip())
+        span = _locate(m, name, keep_tail=True)          # keeps the reporter citation
         found.append(Citation(
-            raw=m.group(0).strip(), kind="case", name=_clean_name(m.group("name").strip()),
+            raw=text[span[0]:span[1]].strip(), kind="case", name=name,
             year=year, reporter=rep, court="SC" if m.group("ct") == "SC" or rep in ("SCC", "SCR") else m.group("ct"),
-            span=m.span(),
+            span=span,
         ))
-        taken.append(m.span())
+        taken.append(span)
 
     for m in CASE_NAME_ONLY.finditer(text):
+        name = _clean_name(m.group("name").strip())
+        span = _locate(m, name, keep_tail=False)         # name only, no neighbouring sentences
+        if overlaps(*span):
+            continue
+        found.append(Citation(raw=text[span[0]:span[1]].strip(), kind="case", name=name, span=span))
+        taken.append(span)
+
+    for m in ARTICLE.finditer(text):
         if overlaps(*m.span()):
             continue
-        found.append(Citation(raw=m.group(0).strip(), kind="case",
-                              name=_clean_name(m.group("name").strip()), span=m.span()))
+        found.append(Citation(raw=m.group(0).strip(), kind="statute", section=m.group("sec"),
+                              act="Constitution of India", span=m.span()))
         taken.append(m.span())
 
     for m in STATUTE.finditer(text):
@@ -195,8 +256,9 @@ class IndianKanoonSource:
             return qs
         if c.kind == "statute" and c.act and c.section:
             act = re.sub(r",?\s*\d{4}$", "", c.act)          # drop trailing year
-            return [f"section {c.section} {act} doctypes: laws",
-                    f"{act} section {c.section}"]
+            w = _provision_word(c)
+            return [f"{w} {c.section} {act} doctypes: laws",
+                    f"{act} {w} {c.section}"]
         return []
 
     def _call(self, query: str) -> list[dict]:
@@ -267,6 +329,11 @@ def _name_sim(a: str, b: str) -> float:
     return max(ratio, 0.9 * contain, token_score)
 
 
+def _provision_word(c: Citation) -> str:
+    """Constitution has 'Articles'; Acts and Codes have 'Sections'."""
+    return "article" if c.act and "constitution" in c.act.lower() else "section"
+
+
 def _year_from(s: str | None) -> str | None:
     m = re.search(r"\b(1[89]\d{2}|20\d{2})\b", s or "")
     return m.group(1) if m else None
@@ -297,11 +364,12 @@ def verify_citation(c: Citation, sources: list[Source]) -> Verdict:
                 score -= 0.1
 
             if c.kind == "statute" and c.section:
-                if re.search(rf"\bsection\s+{re.escape(c.section)}\b", hit.title, re.I):
-                    reasons.append(f"section {c.section} found in source title")
+                w = _provision_word(c)
+                if re.search(rf"\b{w}\s+{re.escape(c.section)}\b", hit.title, re.I):
+                    reasons.append(f"{w} {c.section} found in source title")
                     score = min(1.0, score + 0.1)
                 else:
-                    reasons.append(f"Act found but section {c.section} not confirmed in title")
+                    reasons.append(f"Act found but {w} {c.section} not confirmed in title")
                     score -= 0.2
 
             if best is None or score > best[0]:
@@ -328,9 +396,146 @@ def verify_citation(c: Citation, sources: list[Source]) -> Verdict:
 # 5. Report + entry point
 # ----------------------------------------------------------------------------
 
-def verify_draft(text: str, sources: list[Source] | None = None) -> dict:
+#
+# LLM extraction pass (optional). The LLM only FINDS citations; it never judges them.
+# Every item must quote the draft word-for-word, or it is thrown away, so the model
+# cannot add authorities that are not in the text.
+#
+Completer = Callable[[str], str]      # any function: prompt in, model text out
+
+EXTRACT_PROMPT = """You are a citation finder for Indian legal drafts. Find EVERY legal authority \
+cited in the text: court cases (with or without a reporter citation) and statutory provisions \
+(sections, articles, rules, orders).
+
+Rules:
+- Do NOT judge whether a citation is correct or real. Only report what the text contains.
+- "quote" must be copied EXACTLY, character for character, from the text.
+- Never invent or complete a citation. Use null for anything the text does not say.
+- Return ONLY a JSON array, no other text. Each item:
+  {"quote": str, "kind": "case" or "statute", "name": str or null, "year": str or null,
+   "reporter": str or null, "act": str or null, "section": str or null}
+  For a case, "name" is the parties ("A v. B"). For a statute, "act" is the Act/Code/Constitution
+  and "section" is the section/article/rule number.
+
+TEXT:
+\"\"\"
+{chunk}
+\"\"\"
+"""
+
+
+def anthropic_completer(model: str = "claude-sonnet-5-5", api_key: str | None = None,
+                        timeout: int = 40) -> Completer | None:
+    """Ready-made completer for Claude. Returns None if no key, so the app still runs
+    on regex alone. To use another LLM, pass any function(prompt) -> str instead."""
+    key = api_key or os.getenv("ANTHROPIC_API_KEY")
+    if not key:
+        return None
+
+    def complete(prompt: str) -> str:
+        r = requests.post(
+            "https://api.anthropic.com/v1/messages",
+            headers={"x-api-key": key, "anthropic-version": "2023-06-01",
+                     "content-type": "application/json"},
+            json={"model": model, "max_tokens": 3000,
+                  "messages": [{"role": "user", "content": prompt}]},
+            timeout=timeout,
+        )
+        r.raise_for_status()
+        return "".join(b.get("text", "") for b in r.json().get("content", []))
+    return complete
+
+
+def _parse_json_list(raw: str) -> list[dict]:
+    raw = re.sub(r"```(?:json)?", "", raw or "").strip()
+    start, end = raw.find("["), raw.rfind("]")
+    if start == -1 or end <= start:
+        return []
+    try:
+        data = json.loads(raw[start:end + 1])
+    except ValueError:
+        return []
+    return [d for d in data if isinstance(d, dict)] if isinstance(data, list) else []
+
+
+def _chunks(text: str, size: int = 6000) -> list[str]:
+    out, cur = [], ""
+    for para in text.split("\n"):
+        if len(cur) + len(para) > size and cur:
+            out.append(cur)
+            cur = ""
+        cur += para + "\n"
+    if cur.strip():
+        out.append(cur)
+    return out
+
+
+def _s(v) -> str | None:
+    return v.strip() if isinstance(v, str) and v.strip() else None
+
+
+def llm_extract(text: str, completer: Completer) -> list[Citation]:
+    found: dict[tuple[int, int], Citation] = {}
+    for chunk in _chunks(text):
+        try:
+            raw = completer(EXTRACT_PROMPT.replace("{chunk}", chunk))
+        except Exception:
+            continue                      # LLM down or slow: regex results still work
+        for d in _parse_json_list(raw):
+            quote, kind = _s(d.get("quote")), d.get("kind")
+            if not quote or kind not in ("case", "statute"):
+                continue
+            pos = text.find(quote)
+            if pos == -1:
+                continue                  # not word-for-word in the draft => dropped
+            span = (pos, pos + len(quote))
+            qlow = quote.lower()
+            year, section = _s(d.get("year")), _s(d.get("section"))
+            year = year if year and year in quote else None        # must appear in the quote
+            section = section if section and section.lower() in qlow else None
+            name, act = _s(d.get("name")), _s(d.get("act"))
+            if kind == "case":
+                if not name:
+                    continue
+                keys = [t for t in _norm(name).split() if t not in PARTY_STOPWORDS and len(t) > 2]
+                if not keys or not all(t in _norm(quote) for t in keys):
+                    continue              # name words not in the quote => model invented them
+                found[span] = Citation(raw=quote, kind="case", name=_clean_name(name), year=year,
+                                       reporter=_s(d.get("reporter")), span=span)
+            else:
+                if not act:
+                    continue
+                found[span] = Citation(raw=quote, kind="statute", act=act, section=section,
+                                       year=year, span=span)
+    return list(found.values())
+
+
+def _overlap(a: tuple[int, int], b: tuple[int, int]) -> bool:
+    return not (a[1] <= b[0] or a[0] >= b[1])
+
+
+def extract_citations_hybrid(text: str, completer: Completer | None = None) -> list[Citation]:
+    """Regex first (fast, free, deterministic), then the LLM fills the gaps."""
+    merged = extract_citations(text)
+    if completer is None:
+        return merged
+    for new in llm_extract(text, completer):
+        old = next((c for c in merged if _overlap(c.span, new.span)), None)
+        if old is None:
+            merged.append(new)
+        elif old.kind == new.kind == "case":      # enrich e.g. a bare name with its year
+            old.year = old.year or new.year
+            old.reporter = old.reporter or new.reporter
+            # the LLM often finds the true start of the name better than regex does
+            if new.name and old.name and new.name != old.name and new.name in old.name:
+                old.name = new.name
+    return sorted(merged, key=lambda c: c.span[0])
+
+
+def verify_draft(text: str, sources: list[Source] | None = None,
+                 completer: Completer | None = None) -> dict:
     sources = sources or [LocalCacheSource(), IndianKanoonSource()]
-    verdicts = [verify_citation(c, sources) for c in extract_citations(text)]
+    verdicts = [verify_citation(c, sources) for c in extract_citations_hybrid(text, completer)]
     summary = {"verified": 0, "partially_verified": 0, "unverified": 0}
     for v in verdicts:
         summary[v.status] += 1
@@ -351,6 +556,6 @@ try:
 
     @router.post("/verify")
     def verify_endpoint(req: VerifyRequest):
-        return verify_draft(req.text)
+        return verify_draft(req.text, completer=anthropic_completer())
 except ImportError:
     router = None

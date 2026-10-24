@@ -78,6 +78,81 @@ def test_year_mismatch_downgrades():
     assert rep["items"][0]["status"] != "verified"
 
 
+# ---------------- LLM extraction pass ----------------
+import json as _json
+from citation_verifier import extract_citations_hybrid, verify_citation
+
+TEXT2 = ("The petitioner relies on Article 21 of the Constitution of India. "
+         "Refer Bandhua Mukti Morcha v. Union of India, 1984 3 SCC 161. "
+         "Reliance is also placed on Indra Sawhney (1992) Supp (3) SCC 217. "
+         "The Court also followed Totally Fake v. Nobody Ltd (2020) 1 SCC 1.")
+
+
+def fake_llm(prompt: str) -> str:
+    return "```json\n" + _json.dumps([
+        # regex only sees the bare name; LLM supplies the year -> enrichment
+        {"quote": "Bandhua Mukti Morcha v. Union of India, 1984 3 SCC 161", "kind": "case",
+         "name": "Bandhua Mukti Morcha v. Union of India", "year": "1984", "reporter": "SCC"},
+        # regex cannot see this at all (no "v.")
+        {"quote": "Indra Sawhney (1992) Supp (3) SCC 217", "kind": "case",
+         "name": "Indra Sawhney", "year": "1992", "reporter": "SCC"},
+        # HALLUCINATED: quote is not in the draft -> must be dropped
+        {"quote": "Maneka Gandhi v. Union of India (1978) 1 SCC 248", "kind": "case",
+         "name": "Maneka Gandhi v. Union of India", "year": "1978"},
+        # name words invented (not in the quote) -> must be dropped
+        {"quote": "Reliance is also placed", "kind": "case",
+         "name": "Kesavananda Bharati v. State of Kerala", "year": None},
+    ]) + "\n```"
+
+
+def test_names_do_not_swallow_neighbouring_sentences():
+    t = ("Article 21 applies under the Constitution of India. Refer Bandhua Mukti Morcha v. "
+         "Union of India. The Court then held otherwise. Mohd. Ahmed Khan v. Shah Bano Begum "
+         "(1985) 2 SCC 556 is also relevant, as is Hindustan Lever Ltd. v. Ashok Kate.")
+    got = {c.name: c for c in extract_citations(t) if c.kind == "case"}
+    assert "Bandhua Mukti Morcha v. Union of India" in got            # no 'Refer', no 'The Court'
+    assert "Mohd. Ahmed Khan v. Shah Bano Begum" in got               # 'Mohd.' is not a sentence end
+    assert "Hindustan Lever Ltd. v. Ashok Kate" in got
+    b = got["Bandhua Mukti Morcha v. Union of India"]
+    assert t[b.span[0]:b.span[1]] == "Bandhua Mukti Morcha v. Union of India"
+
+
+def test_article_regex_without_llm():
+    cites = extract_citations("Article 21 of the Constitution of India applies.")
+    assert cites[0].kind == "statute" and cites[0].section == "21"
+    assert cites[0].act == "Constitution of India"
+
+
+def test_llm_fills_gaps_and_enriches():
+    cites = extract_citations_hybrid(TEXT2, completer=fake_llm)
+    by = {(c.name or c.act): c for c in cites}
+    assert by["Bandhua Mukti Morcha v. Union of India"].year == "1984"     # enriched
+    assert "Indra Sawhney" in by                                           # LLM-only find
+    assert "Constitution of India" in by                                   # regex find kept
+    assert not any("Maneka" in (c.name or "") for c in cites)              # hallucination dropped
+    assert not any("Kesavananda" in (c.name or "") for c in cites)         # invented name dropped
+    assert not any(c.raw == "Reliance is also placed" for c in cites)
+
+
+def test_llm_failures_never_break_extraction():
+    def boom(prompt): raise TimeoutError("llm down")
+    base = [c.raw for c in extract_citations(TEXT2)]
+    assert [c.raw for c in extract_citations_hybrid(TEXT2, completer=boom)] == base
+    assert [c.raw for c in extract_citations_hybrid(TEXT2, completer=lambda p: "not json")] == base
+    assert [c.raw for c in extract_citations_hybrid(TEXT2, completer=None)] == base
+
+
+def test_article_verifies_against_constitution_title():
+    class Src:
+        def search(self, c):
+            return [SourceHit("Article 21 in Constitution of India", "https://indiankanoon.org/doc/1/", None)]
+    c = extract_citations("Article 21 of the Constitution of India")[0]
+    v = verify_citation(c, [Src()])
+    assert v.status == "verified"
+    c2 = Citation(raw="x", kind="statute", act="Constitution of India", section="99")
+    assert verify_citation(c2, [Src()]).status != "verified"
+
+
 def test_query_building():
     c = Citation(raw="x", kind="case", name="Kesavananda Bharati v. State of Kerala")
     qs = IndianKanoonSource._queries(c)
