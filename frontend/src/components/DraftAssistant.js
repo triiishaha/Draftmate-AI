@@ -131,7 +131,7 @@ export default function DraftAssistant({ styleGuide, draft, setDraft, documentTy
       {note && <p className="da-note">{note}</p>}
       <div className="da-tools">
         <button type="button" onClick={undo}>Undo</button>
-        <button type="button" onClick={() => exportDraft(draft, documentType, "docx")}>Export Word</button>
+        <button type="button" onClick={() => exportDraft(draft, documentType, "docx")}>Export Word (.docx)</button>
         <button type="button" onClick={() => exportDraft(draft, documentType, "pdf")}>Export PDF</button>
       </div>
     </section>

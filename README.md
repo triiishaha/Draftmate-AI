@@ -58,3 +58,8 @@ AI revisions are shown as a proposal and only replace the draft after you confir
 In the Drafter, upload a **Reference document** (an earlier draft or template). `POST /style/profile` measures its tone,
 obligation verb (shall/will), numbering, heading case, defined terms and opening/closing phrases, and builds a style guide
 that is added to the draft prompt and to AI revisions. Only style is copied, never facts. No model call is used for the analysis.
+
+## Export
+
+`POST /export/docx` builds a real Word file (python-docx) from the draft: Times New Roman 12 pt, centred bold headings, justified paragraphs.
+The Drafter's **Export Word (.docx)** button uses it (falls back to a Word-compatible `.doc` if the backend is down). PDF uses the browser's Save as PDF.
