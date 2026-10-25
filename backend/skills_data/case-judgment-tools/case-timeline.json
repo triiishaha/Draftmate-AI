@@ -1,0 +1,18 @@
+{
+  "id": "case-timeline",
+  "name": "Case Timeline",
+  "category": "Case & Judgment Tools",
+  "audience": [
+    "lawyer",
+    "student"
+  ],
+  "description": "Build a case timeline",
+  "instruction": "Build a dated timeline of events and proceedings from the documents. Mark undated events as undated.",
+  "needs_document": true,
+  "output": "table",
+  "keywords": [
+    "build",
+    "case",
+    "timeline"
+  ]
+}

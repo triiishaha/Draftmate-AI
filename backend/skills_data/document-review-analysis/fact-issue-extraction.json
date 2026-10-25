@@ -1,0 +1,21 @@
+{
+  "id": "fact-issue-extraction",
+  "name": "Fact & Issue Extraction",
+  "category": "Document Review & Analysis",
+  "audience": [
+    "lawyer",
+    "student"
+  ],
+  "description": "Pull out facts and issues",
+  "instruction": "Extract the material facts with dates and the legal issues raised. Separate undisputed from disputed facts.",
+  "needs_document": true,
+  "output": "table",
+  "keywords": [
+    "extraction",
+    "fact",
+    "facts",
+    "issue",
+    "issues",
+    "pull"
+  ]
+}

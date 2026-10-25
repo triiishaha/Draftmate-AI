@@ -1,0 +1,20 @@
+{
+  "id": "exam-question-generator-student",
+  "name": "Exam Question Generator",
+  "category": "Student Learning & Exam Prep",
+  "audience": [
+    "student"
+  ],
+  "description": "Generate exam questions",
+  "instruction": "Generate exam questions at the requested difficulty with marking points. Include problem questions and essay questions.",
+  "needs_document": false,
+  "output": "study",
+  "keywords": [
+    "exam",
+    "generate",
+    "generator",
+    "question",
+    "questions",
+    "student"
+  ]
+}

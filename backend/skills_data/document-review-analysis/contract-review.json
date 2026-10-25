@@ -1,0 +1,18 @@
+{
+  "id": "contract-review",
+  "name": "Contract Review",
+  "category": "Document Review & Analysis",
+  "audience": [
+    "lawyer"
+  ],
+  "description": "Review a contract and flag issues",
+  "instruction": "Review the contract: summarise key terms, flag risky, missing and unclear clauses with severity, and propose fixes. Cite clause numbers.",
+  "needs_document": true,
+  "output": "analysis",
+  "keywords": [
+    "contract",
+    "flag",
+    "issues",
+    "review"
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "id": "argument-analysis",
+  "name": "Argument Analysis",
+  "category": "Case & Judgment Tools",
+  "audience": [
+    "lawyer",
+    "student"
+  ],
+  "description": "Map the arguments",
+  "instruction": "Map each party's arguments, the authorities relied on and the strength of each argument.",
+  "needs_document": true,
+  "output": "table",
+  "keywords": [
+    "analysis",
+    "argument",
+    "arguments"
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "id": "study-plan-student",
+  "name": "Study Plan",
+  "category": "Student Learning & Exam Prep",
+  "audience": [
+    "student"
+  ],
+  "description": "Plan your revision",
+  "instruction": "Create a day-by-day study plan from the exam date, syllabus and available hours, with revision and practice slots.",
+  "needs_document": false,
+  "output": "study",
+  "keywords": [
+    "plan",
+    "revision",
+    "student",
+    "study",
+    "your"
+  ]
+}

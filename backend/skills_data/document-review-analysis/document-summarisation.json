@@ -1,0 +1,18 @@
+{
+  "id": "document-summarisation",
+  "name": "Document Summarisation",
+  "category": "Document Review & Analysis",
+  "audience": [
+    "lawyer",
+    "student"
+  ],
+  "description": "Summarise any document",
+  "instruction": "Summarise the document: purpose, parties, key terms, dates, obligations and open issues. Keep section references and add nothing that is not in the text.",
+  "needs_document": true,
+  "output": "summary",
+  "keywords": [
+    "document",
+    "summarisation",
+    "summarise"
+  ]
+}

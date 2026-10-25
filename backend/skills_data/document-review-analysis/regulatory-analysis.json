@@ -1,0 +1,18 @@
+{
+  "id": "regulatory-analysis",
+  "name": "Regulatory Analysis",
+  "category": "Document Review & Analysis",
+  "audience": [
+    "lawyer"
+  ],
+  "description": "How a regulation applies",
+  "instruction": "Analyse how the named regulation applies to the facts: applicability, obligations, penalties and open questions. Flag where the current text must be verified.",
+  "needs_document": false,
+  "output": "analysis",
+  "keywords": [
+    "analysis",
+    "applies",
+    "regulation",
+    "regulatory"
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "id": "judgment-summarisation",
+  "name": "Judgment Summarisation",
+  "category": "Case & Judgment Tools",
+  "audience": [
+    "lawyer",
+    "student"
+  ],
+  "description": "Summarise a judgment",
+  "instruction": "Summarise the judgment: short head-note, facts, issues, holding and directions.",
+  "needs_document": true,
+  "output": "summary",
+  "keywords": [
+    "judgment",
+    "summarisation",
+    "summarise"
+  ]
+}

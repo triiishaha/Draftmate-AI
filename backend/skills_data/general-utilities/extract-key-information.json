@@ -1,0 +1,18 @@
+{
+  "id": "extract-key-information",
+  "name": "Extract Key Information",
+  "category": "General Utilities",
+  "audience": [
+    "lawyer",
+    "student"
+  ],
+  "description": "Extract key details",
+  "instruction": "Extract parties, dates, amounts, obligations, governing law and termination terms into a table. Use 'Not stated' where absent.",
+  "needs_document": true,
+  "output": "table",
+  "keywords": [
+    "details",
+    "extract",
+    "information"
+  ]
+}

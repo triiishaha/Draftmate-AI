@@ -1,0 +1,17 @@
+{
+  "id": "regulatory-research",
+  "name": "Regulatory Research",
+  "category": "Compliance & Advisory",
+  "audience": [
+    "lawyer"
+  ],
+  "description": "Research regulations",
+  "instruction": "Identify the regulations and regulators relevant to the activity, summarise duties and note what must be verified on the official source.",
+  "needs_document": false,
+  "output": "analysis",
+  "keywords": [
+    "regulations",
+    "regulatory",
+    "research"
+  ]
+}

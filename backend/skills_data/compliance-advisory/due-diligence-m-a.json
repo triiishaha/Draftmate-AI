@@ -1,0 +1,15 @@
+{
+  "id": "due-diligence-m-a",
+  "name": "Due Diligence (M&A)",
+  "category": "Compliance & Advisory",
+  "audience": [
+    "lawyer"
+  ],
+  "description": "M&A due diligence",
+  "instruction": "Run an M&A due diligence review: corporate, contracts, IP, employment, litigation, regulatory and tax. Provide red flags, missing items and deal-protection suggestions.",
+  "needs_document": true,
+  "output": "table",
+  "keywords": [
+    "diligence"
+  ]
+}

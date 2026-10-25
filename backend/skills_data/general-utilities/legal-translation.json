@@ -1,0 +1,19 @@
+{
+  "id": "legal-translation",
+  "name": "Legal Translation",
+  "category": "General Utilities",
+  "audience": [
+    "lawyer",
+    "student"
+  ],
+  "description": "Translate legal text",
+  "instruction": "Translate the text into the target language, keeping legal terms precise. Keep the original term in brackets where no exact equivalent exists.",
+  "needs_document": true,
+  "output": "draft",
+  "keywords": [
+    "legal",
+    "text",
+    "translate",
+    "translation"
+  ]
+}

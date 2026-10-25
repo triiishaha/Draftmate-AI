@@ -1,0 +1,18 @@
+{
+  "id": "legal-opinion",
+  "name": "Legal Opinion",
+  "category": "Drafting & Writing",
+  "audience": [
+    "lawyer"
+  ],
+  "description": "Draft a reasoned legal opinion",
+  "instruction": "Draft a legal opinion: question presented, facts and assumptions, analysis, conclusion and qualifications. Separate settled law from arguable points.",
+  "needs_document": false,
+  "output": "analysis",
+  "keywords": [
+    "draft",
+    "legal",
+    "opinion",
+    "reasoned"
+  ]
+}

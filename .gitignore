@@ -22,3 +22,5 @@ npm-debug.log*
 # misc
 .DS_Store
 _backup_before_integration/
+
+backend/skills_data/custom/

@@ -1,0 +1,17 @@
+.da-box{margin-top:20px;border:1px solid #d9dee8;border-radius:12px;padding:16px;background:#fff;display:grid;gap:12px}
+.da-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.da-head h3{margin:0;font-size:1rem}
+.da-model{display:flex;gap:8px;align-items:center;font-size:.85rem}
+.da-model select{padding:4px 8px}
+.da-skill{margin:0;font-size:.85rem}
+.da-skill button{border:0;background:none;color:#4a5ab9;cursor:pointer;text-decoration:underline}
+.da-ask{display:flex;gap:8px}
+.da-ask input{flex:1;padding:9px 12px;border:1px solid #c9d0de;border-radius:8px}
+.da-ask button,.da-tools button,.da-proposal button{padding:8px 14px;border:1px solid #c9d0de;border-radius:8px;background:#f5f7fb;cursor:pointer}
+.da-ask button:disabled{opacity:.5;cursor:default}
+.da-proposal{border:1px solid #b8c4ee;background:#f4f6ff;border-radius:10px;padding:12px;display:grid;gap:8px}
+.da-proposal pre{white-space:pre-wrap;max-height:220px;overflow:auto;margin:0;font-family:inherit;font-size:.9rem;background:#fff;padding:8px;border-radius:6px}
+.da-proposal .da-yes{background:#2e3a8c;color:#fff;border-color:#2e3a8c}
+.da-error{color:#b00020;margin:0;font-size:.9rem}
+.da-note{color:#27553a;margin:0;font-size:.9rem}
+.da-tools{display:flex;gap:8px;flex-wrap:wrap}

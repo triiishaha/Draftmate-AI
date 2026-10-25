@@ -1,0 +1,18 @@
+{
+  "id": "data-privacy-review",
+  "name": "Data Privacy Review",
+  "category": "Compliance & Advisory",
+  "audience": [
+    "lawyer"
+  ],
+  "description": "Review data-privacy compliance",
+  "instruction": "Review data-protection compliance: personal data handled, lawful basis or consent, notices, retention, transfers, rights handling and breach process. Name the statute you apply.",
+  "needs_document": true,
+  "output": "table",
+  "keywords": [
+    "compliance",
+    "data",
+    "privacy",
+    "review"
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "id": "document-comparison",
+  "name": "Document Comparison",
+  "category": "Document Review & Analysis",
+  "audience": [
+    "lawyer"
+  ],
+  "description": "Compare two documents",
+  "instruction": "Compare the documents clause by clause: additions, deletions, changes, and the legal effect of each material change.",
+  "needs_document": true,
+  "output": "table",
+  "keywords": [
+    "compare",
+    "comparison",
+    "document",
+    "documents"
+  ]
+}

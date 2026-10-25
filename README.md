@@ -44,3 +44,11 @@ cd backend && python3 -m pip install pytest httpx && python3 -m pytest -q
 - Citation status means: **Verified** = the authority exists under that name and year in a legal source; **Needs Review** = a partial match; **Not Found** = no matching authority, do not rely on it. It does not confirm what a judgment says.
 - Secrets live only in `.env` files, which are git-ignored. Never commit them.
 - AI output is general information, not legal advice.
+
+## Skills, voice and model picker (Drafter)
+
+The Drafter has an **AI assistant** panel under the draft: skill chips (68 skills, full list at `/skills-library`),
+a model picker, an instruction box and a voice agent. Voice commands include `use contract review`, `replace X with Y`,
+`make it more formal`, `delete paragraph 2` (asks for confirmation), `undo`, `read it back`, `export as Word/PDF`.
+AI revisions are shown as a proposal and only replace the draft after you confirm. API: `/api/skills`, `/api/models`,
+`/api/voice/*`, `/api/convert` (see `/docs`). Gemini is the default model; Claude/GPT tiers appear if their keys are set.

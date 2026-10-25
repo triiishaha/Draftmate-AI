@@ -1,0 +1,19 @@
+{
+  "id": "legal-notice-drafting",
+  "name": "Legal Notice Drafting",
+  "category": "Drafting & Writing",
+  "audience": [
+    "lawyer"
+  ],
+  "description": "Draft a formal legal notice",
+  "instruction": "Draft a formal legal notice: sender, recipient, facts in numbered paragraphs, legal basis, specific demand, time limit to comply, and consequences of non-compliance. Ask for missing facts instead of guessing.",
+  "needs_document": false,
+  "output": "draft",
+  "keywords": [
+    "draft",
+    "drafting",
+    "formal",
+    "legal",
+    "notice"
+  ]
+}

@@ -1,0 +1,16 @@
+.va-box{--brand:#0f5c63;--line:#d5dde2;--ink:#14232b;--muted:#5a6b75;border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:#fff;color:var(--ink);font-family:"Segoe UI",system-ui,sans-serif;max-width:640px}
+.va-row{display:flex;align-items:center;gap:12px}
+.va-mic{width:44px;height:44px;border-radius:50%;border:1px solid var(--brand);background:#fff;color:var(--brand);display:grid;place-items:center;cursor:pointer;flex:none}
+.va-mic.on{background:var(--brand);color:#fff;box-shadow:0 0 0 4px rgba(15,92,99,.2)}
+.va-mic:disabled{opacity:.4;cursor:not-allowed}
+.va-mic:focus-visible,.va-yes:focus-visible,.va-no:focus-visible,.va-type input:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+.va-status{flex:1;min-width:0;display:flex;flex-direction:column}
+.va-status span{color:var(--muted);font-size:.88rem;overflow-wrap:anywhere}
+.va-row select{border:1px solid var(--line);border-radius:6px;padding:6px;font:inherit;font-size:.85rem;background:#fff;color:var(--ink)}
+.va-msg{margin:10px 0 0;font-size:.92rem}.va-msg.bad{color:#a72b2b}
+.va-confirm{margin-top:10px;padding:10px 12px;border:1px solid #a86a0c;border-radius:8px;background:#fff8ec}
+.va-confirm p{margin:0 0 8px}
+.va-yes,.va-no{border-radius:6px;padding:7px 16px;font:inherit;font-weight:600;cursor:pointer;margin-right:8px}
+.va-yes{background:#a72b2b;color:#fff;border:0}.va-no{background:#fff;border:1px solid var(--line);color:var(--ink)}
+.va-type{margin-top:10px}.va-type input{width:100%;box-sizing:border-box;padding:8px 10px;border:1px solid var(--line);border-radius:6px;font:inherit;background:#fff;color:var(--ink)}
+@media(prefers-reduced-motion:no-preference){.va-mic{transition:box-shadow .2s,background .2s}}

@@ -1,0 +1,20 @@
+{
+  "id": "case-comparison",
+  "name": "Case Comparison",
+  "category": "Case & Judgment Tools",
+  "audience": [
+    "lawyer",
+    "student"
+  ],
+  "description": "Compare two or more cases",
+  "instruction": "Compare the cases on facts, issues, holdings and reasoning, and explain how and why they differ.",
+  "needs_document": true,
+  "output": "table",
+  "keywords": [
+    "case",
+    "cases",
+    "compare",
+    "comparison",
+    "more"
+  ]
+}

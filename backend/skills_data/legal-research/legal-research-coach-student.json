@@ -1,0 +1,20 @@
+{
+  "id": "legal-research-coach-student",
+  "name": "Legal Research Coach",
+  "category": "Legal Research",
+  "audience": [
+    "student"
+  ],
+  "description": "Learn the research process",
+  "instruction": "Coach the student through research: framing the question, where to search and how to record findings. Ask guiding questions before giving answers.",
+  "needs_document": false,
+  "output": "study",
+  "keywords": [
+    "coach",
+    "learn",
+    "legal",
+    "process",
+    "research",
+    "student"
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "id": "petition-drafting",
+  "name": "Petition Drafting",
+  "category": "Drafting & Writing",
+  "audience": [
+    "lawyer"
+  ],
+  "description": "Draft petitions and applications",
+  "instruction": "Draft a petition: court heading, parties, jurisdiction, facts in numbered chronological paragraphs, grounds and prayer. Cite no authority unless supplied, otherwise mark it [VERIFY].",
+  "needs_document": false,
+  "output": "draft",
+  "keywords": [
+    "applications",
+    "draft",
+    "drafting",
+    "petition",
+    "petitions"
+  ]
+}

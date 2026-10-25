@@ -1,0 +1,21 @@
+{
+  "id": "create-meeting-notes",
+  "name": "Create Meeting Notes",
+  "category": "General Utilities",
+  "audience": [
+    "lawyer",
+    "student"
+  ],
+  "description": "Turn a discussion into notes",
+  "instruction": "Turn the transcript or notes into minutes: attendees, decisions, action items with owners and deadlines.",
+  "needs_document": true,
+  "output": "notes",
+  "keywords": [
+    "create",
+    "discussion",
+    "into",
+    "meeting",
+    "notes",
+    "turn"
+  ]
+}

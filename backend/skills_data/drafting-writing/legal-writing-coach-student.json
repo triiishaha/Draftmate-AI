@@ -1,0 +1,19 @@
+{
+  "id": "legal-writing-coach-student",
+  "name": "Legal Writing Coach",
+  "category": "Drafting & Writing",
+  "audience": [
+    "student"
+  ],
+  "description": "Feedback on student writing",
+  "instruction": "Give feedback on the supplied text: structure, clarity, argument and precision. Quote the sentence, explain the issue and offer a rewrite. Do not rewrite the whole piece unless asked.",
+  "needs_document": true,
+  "output": "analysis",
+  "keywords": [
+    "coach",
+    "feedback",
+    "legal",
+    "student",
+    "writing"
+  ]
+}

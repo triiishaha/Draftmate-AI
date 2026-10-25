@@ -1,0 +1,16 @@
+{
+  "id": "due-diligence",
+  "name": "Due Diligence",
+  "category": "Document Review & Analysis",
+  "audience": [
+    "lawyer"
+  ],
+  "description": "Document due diligence",
+  "instruction": "Run a document due diligence: items found, documents missing, red flags and follow-up questions.",
+  "needs_document": true,
+  "output": "table",
+  "keywords": [
+    "diligence",
+    "document"
+  ]
+}

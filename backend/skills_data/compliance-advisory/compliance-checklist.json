@@ -1,0 +1,17 @@
+{
+  "id": "compliance-checklist",
+  "name": "Compliance Checklist",
+  "category": "Compliance & Advisory",
+  "audience": [
+    "lawyer"
+  ],
+  "description": "Create a compliance checklist",
+  "instruction": "Create a checklist of compliance requirements for the stated activity and jurisdiction, with the source provision, owner and frequency where known.",
+  "needs_document": false,
+  "output": "table",
+  "keywords": [
+    "checklist",
+    "compliance",
+    "create"
+  ]
+}

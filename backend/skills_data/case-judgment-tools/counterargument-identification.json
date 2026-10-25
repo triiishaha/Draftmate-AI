@@ -1,0 +1,18 @@
+{
+  "id": "counterargument-identification",
+  "name": "Counterargument Identification",
+  "category": "Case & Judgment Tools",
+  "audience": [
+    "lawyer"
+  ],
+  "description": "Find counterarguments",
+  "instruction": "Identify the strongest counterarguments to the stated position and suggest responses.",
+  "needs_document": false,
+  "output": "analysis",
+  "keywords": [
+    "counterargument",
+    "counterarguments",
+    "find",
+    "identification"
+  ]
+}

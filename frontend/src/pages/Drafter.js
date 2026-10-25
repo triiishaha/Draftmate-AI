@@ -9,6 +9,7 @@ import {
   LoaderCircle,
 } from "lucide-react";
 import VerifyPanel from "../components/VerifyPanel";
+import DraftAssistant from "../components/DraftAssistant";
 import "./Drafter.css";
 
 const fieldsByType = {
@@ -365,6 +366,8 @@ function Drafter() {
               <p className="drafter-edit-hint">
                 Changes are editable in this preview. Download to keep a copy.
               </p>
+
+              <DraftAssistant draft={draft} setDraft={setDraft} documentType={documentType} onVerify={() => document.querySelector(".vp-panel")?.scrollIntoView({ behavior: "smooth" })} />
 
               <VerifyPanel text={draft} />
             </div>

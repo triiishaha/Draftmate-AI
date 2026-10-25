@@ -1,0 +1,16 @@
+{
+  "id": "esg-review",
+  "name": "ESG Review",
+  "category": "Compliance & Advisory",
+  "audience": [
+    "lawyer"
+  ],
+  "description": "Review ESG obligations",
+  "instruction": "Review environmental, social and governance obligations and disclosures against the stated framework, with gaps and actions.",
+  "needs_document": true,
+  "output": "table",
+  "keywords": [
+    "obligations",
+    "review"
+  ]
+}

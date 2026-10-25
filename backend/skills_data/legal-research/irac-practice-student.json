@@ -1,0 +1,18 @@
+{
+  "id": "irac-practice-student",
+  "name": "IRAC Practice",
+  "category": "Legal Research",
+  "audience": [
+    "student"
+  ],
+  "description": "Practice IRAC answers",
+  "instruction": "Answer or grade the problem in IRAC format (Issue, Rule, Application, Conclusion). When grading, give a score and say what was missing.",
+  "needs_document": false,
+  "output": "study",
+  "keywords": [
+    "answers",
+    "irac",
+    "practice",
+    "student"
+  ]
+}

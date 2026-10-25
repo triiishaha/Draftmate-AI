@@ -1,0 +1,17 @@
+{
+  "id": "clause-rewriting",
+  "name": "Clause Rewriting",
+  "category": "General Utilities",
+  "audience": [
+    "lawyer"
+  ],
+  "description": "Rewrite a clause",
+  "instruction": "Rewrite the clause as requested (clearer, shorter, more protective, balanced) and explain what changed.",
+  "needs_document": true,
+  "output": "draft",
+  "keywords": [
+    "clause",
+    "rewrite",
+    "rewriting"
+  ]
+}

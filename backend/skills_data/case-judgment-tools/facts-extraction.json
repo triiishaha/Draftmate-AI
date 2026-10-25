@@ -1,0 +1,18 @@
+{
+  "id": "facts-extraction",
+  "name": "Facts Extraction",
+  "category": "Case & Judgment Tools",
+  "audience": [
+    "lawyer",
+    "student"
+  ],
+  "description": "Extract the facts",
+  "instruction": "Extract the facts in neutral chronological order with paragraph references.",
+  "needs_document": true,
+  "output": "summary",
+  "keywords": [
+    "extract",
+    "extraction",
+    "facts"
+  ]
+}

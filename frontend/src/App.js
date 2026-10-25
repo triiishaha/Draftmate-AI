@@ -18,6 +18,7 @@ import Understand from "./pages/Understand";
 import ContractIntelligence from "./pages/ContractIntelligence";
 import Productivity from "./pages/Productivity";
 import CaseLaw from "./pages/CaseLaw";
+import SkillsLibrary from "./components/SkillsLibrary";
 
 import "./App.css";
 
@@ -52,7 +53,7 @@ function App() {
 
         <Route path="/conversations" element={<WorkspacePage />} />
 
-        <Route path="/skills-library" element={<WorkspacePage />} />
+        <Route path="/skills-library" element={<PageShell><SkillsLibrary /></PageShell>} />
 
         <Route path="/compliance" element={<WorkspacePage />} />
 
