@@ -60,6 +60,21 @@ const documentGuidance = {
     "Prepare the appropriate document using the supplied purpose and facts.",
 };
 
+// Models sometimes ignore "no markdown", so drafts are cleaned here as well.
+function stripMarkdown(text) {
+  return String(text || "")
+    .replace(/\r\n/g, "\n")
+    .replace(/^\s{0,3}#{1,6}\s*/gm, "")            // ### Heading
+    .replace(/^\s*([-*_])\1{2,}\s*$/gm, "")        // --- rules
+    .replace(/\*\*([^*\n]+)\*\*/g, "$1")            // **bold**
+    .replace(/__([^_\n]+)__/g, "$1")                // __bold__
+    .replace(/(^|[^*\w])\*([^*\n]+)\*(?!\w)/g, "$1$2") // *italic*
+    .replace(/^(\s*)\*\s+/gm, "$1- ")              // "* item" -> "- item"
+    .replace(/`([^`\n]+)`/g, "$1")                  // `code`
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
 // Helper: generate text using Gemini
 // Gemini calls: retries when a model is overloaded, falls back to other models. See gemini.js.
 // Optional in server/.env:  GEMINI_MODELS=gemini-3.8-flash,another-model
@@ -183,7 +198,7 @@ Rules:
 - Write plain text only. Do not use markdown symbols such as #, ** or ---. Use UPPERCASE headings and numbered clauses.
 `;
 
-    const draft = await generateAIText(prompt);
+    const draft = stripMarkdown(await generateAIText(prompt));
 
     return res.json({ draft });
   } catch (error) {
