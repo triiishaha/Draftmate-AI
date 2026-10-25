@@ -5,7 +5,8 @@ export async function agentApi(path, { method = "GET", body, file } = {}) {
   const opts = { method };
   if (file) { const fd = new FormData(); fd.append("file", file); opts.body = fd; }
   else if (body) { opts.headers = { "Content-Type": "application/json" }; opts.body = JSON.stringify(body); }
-  const res = await fetch(`${BASE}/api${path}`, opts);
+  const url = path.startsWith("/../") ? `${BASE}/${path.slice(4)}` : `${BASE}/api${path}`;
+  const res = await fetch(url, opts);
   if (!res.ok) {
     let msg = res.statusText;
     try { msg = (await res.json()).detail || msg; } catch (e) { /* keep statusText */ }

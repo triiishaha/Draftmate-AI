@@ -52,3 +52,9 @@ a model picker, an instruction box and a voice agent. Voice commands include `us
 `make it more formal`, `delete paragraph 2` (asks for confirmation), `undo`, `read it back`, `export as Word/PDF`.
 AI revisions are shown as a proposal and only replace the draft after you confirm. API: `/api/skills`, `/api/models`,
 `/api/voice/*`, `/api/convert` (see `/docs`). Gemini is the default model; Claude/GPT tiers appear if their keys are set.
+
+## Reference-style adaptation
+
+In the Drafter, upload a **Reference document** (an earlier draft or template). `POST /style/profile` measures its tone,
+obligation verb (shall/will), numbering, heading case, defined terms and opening/closing phrases, and builds a style guide
+that is added to the draft prompt and to AI revisions. Only style is copied, never facts. No model call is used for the analysis.

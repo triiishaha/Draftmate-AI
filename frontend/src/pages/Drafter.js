@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import VerifyPanel from "../components/VerifyPanel";
 import DraftAssistant from "../components/DraftAssistant";
+import ReferenceStyle from "../components/ReferenceStyle";
 import "./Drafter.css";
 
 const fieldsByType = {
@@ -106,6 +107,7 @@ function Drafter() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [generated, setGenerated] = useState(false);
+  const [reference, setReference] = useState(null);
 
   const currentFields = fieldsByType[documentType];
 
@@ -143,6 +145,7 @@ function Drafter() {
           documentType,
           jurisdiction,
           details,
+          styleGuide: reference?.guide || "",
         }),
       });
 
@@ -244,6 +247,8 @@ function Drafter() {
             <option>United Kingdom</option>
             <option>Other / not sure</option>
           </select>
+
+          <ReferenceStyle value={reference} onChange={setReference} />
 
           {currentFields.map(([key, label, placeholder]) => (
             <div className="drafter-field" key={key}>
@@ -367,7 +372,7 @@ function Drafter() {
                 Changes are editable in this preview. Download to keep a copy.
               </p>
 
-              <DraftAssistant draft={draft} setDraft={setDraft} documentType={documentType} onVerify={() => document.querySelector(".vp-panel")?.scrollIntoView({ behavior: "smooth" })} />
+              <DraftAssistant styleGuide={reference?.guide} draft={draft} setDraft={setDraft} documentType={documentType} onVerify={() => document.querySelector(".vp-panel")?.scrollIntoView({ behavior: "smooth" })} />
 
               <VerifyPanel text={draft} />
             </div>

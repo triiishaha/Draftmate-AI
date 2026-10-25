@@ -1,0 +1,8 @@
+.rs-box{border:1px dashed #b8c4ee;border-radius:10px;padding:12px;margin:12px 0;background:#f8f9ff;display:grid;gap:8px}
+.rs-head{display:grid;gap:2px}.rs-head span{font-size:.82rem;color:#5a6178}
+.rs-pick{display:block;padding:10px;border:1px solid #c9d0de;border-radius:8px;background:#fff;cursor:pointer;text-align:center;font-size:.9rem}
+.rs-pick input{display:none}
+.rs-done p{margin:0 0 4px}.rs-done ul{margin:0 0 6px;padding-left:18px;font-size:.88rem}
+.rs-done button{margin-left:8px;border:0;background:none;color:#4a5ab9;cursor:pointer;text-decoration:underline}
+.rs-done small{color:#5a6178}
+.rs-error{color:#b00020;margin:0;font-size:.88rem}

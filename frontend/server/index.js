@@ -92,7 +92,7 @@ app.get("/api/research", (req, res) => {
 // Legal document drafting
 app.post("/api/draft", async (req, res) => {
   try {
-    const { documentType, jurisdiction, details } = req.body || {};
+    const { documentType, jurisdiction, details, styleGuide } = req.body || {};
 
     if (!documentGuidance[documentType]) {
       return res.status(400).json({
@@ -139,6 +139,14 @@ app.post("/api/draft", async (req, res) => {
       });
     }
 
+    const style =
+      typeof styleGuide === "string" && styleGuide.trim()
+        ? styleGuide.trim().slice(0, 6000)
+        : "";
+    const styleBlock = style
+      ? `\nREFERENCE STYLE GUIDE (learned from the user's own reference document):\n${style}\nFollow this style for tone, structure, numbering, headings, defined terms and clause wording. Do not take any facts from it.\n`
+      : "";
+
     const prompt = `
 You are DraftMate AI, a legal document drafting assistant.
 
@@ -150,7 +158,7 @@ ${documentGuidance[documentType]}
 
 User-provided details:
 ${detailsText}
-
+${styleBlock}
 Prepare a complete, professional document based on the supplied facts.
 
 Rules:

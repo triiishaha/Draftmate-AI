@@ -28,6 +28,7 @@ from context_opt import router as context_router             # POST /context/opt
 from routes_document import router as document_router       # POST /document/process, /voice/parse
 from routes_draft import router as draft_router              # GET /draft/skills; POST /draft/run
 from agent_routes import router as agent_router               # /api/skills, /api/models, /api/voice/*, /api/convert ...
+from style_profile import router as style_router               # POST /style/profile (file), /style/analyze (text)
 from testpage import router as test_router                   # /test, /demo
 
 DEFAULT_ORIGINS = "http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173"
@@ -37,7 +38,7 @@ app = FastAPI(title="DraftMate AI backend", version="1.0")
 app.add_middleware(CORSMiddleware, allow_origins=ORIGINS, allow_methods=["*"], allow_headers=["*"])
 
 for r in (verify_router, research_router, contract_router, risk_router, impact_router, store_router,
-          convert_router, context_router, document_router, draft_router, agent_router, test_router):
+          convert_router, context_router, document_router, draft_router, agent_router, style_router, test_router):
     app.include_router(r)
 
 

@@ -10,7 +10,7 @@ import "./DraftAssistant.css";
  * type or speak an instruction. Results are shown as a proposal and only replace the
  * draft after the user confirms. Voice delete/overwrite are confirmed by the voice agent first.
  */
-export default function DraftAssistant({ draft, setDraft, documentType, onVerify }) {
+export default function DraftAssistant({ styleGuide, draft, setDraft, documentType, onVerify }) {
   const [models, setModels] = useState([]);
   const [tier, setTier] = useState("");
   const [skill, setSkill] = useState(null);
@@ -41,7 +41,7 @@ export default function DraftAssistant({ draft, setDraft, documentType, onVerify
         method: "POST",
         body: {
           skill_id: useSkill.id,
-          instruction: `${instr}\n\nWork on the current draft below. Keep all facts and substantive meaning unless told otherwise. Return the full revised text only.`,
+          instruction: `${instr}\n\nWork on the current draft below. Keep all facts and substantive meaning unless told otherwise. Return the full revised text only.${styleGuide ? `\n\nREFERENCE STYLE GUIDE (follow it for tone and structure; take no facts from it):\n${styleGuide}` : ""}`,
           documents: [{ name: `Current ${documentType}`, markdown: draftRef.current }],
           tier,
         },
