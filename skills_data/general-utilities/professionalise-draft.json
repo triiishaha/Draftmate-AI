@@ -1,0 +1,18 @@
+{
+  "id": "professionalise-draft",
+  "name": "Professionalise Draft",
+  "category": "General Utilities",
+  "audience": [
+    "lawyer"
+  ],
+  "description": "Polish a rough draft",
+  "instruction": "Improve the draft's tone, structure and precision as a professional legal document. Keep substantive meaning unless told otherwise.",
+  "needs_document": true,
+  "output": "draft",
+  "keywords": [
+    "draft",
+    "polish",
+    "professionalise",
+    "rough"
+  ]
+}

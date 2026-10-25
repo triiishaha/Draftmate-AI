@@ -1,0 +1,20 @@
+{
+  "id": "convert-to-different-formats",
+  "name": "Convert to Different Formats",
+  "category": "General Utilities",
+  "audience": [
+    "lawyer",
+    "student"
+  ],
+  "description": "Reformat a document",
+  "instruction": "Convert the content to the requested format (letter, memo, table, bullet summary, email) without changing its substance.",
+  "needs_document": true,
+  "output": "draft",
+  "keywords": [
+    "convert",
+    "different",
+    "document",
+    "formats",
+    "reformat"
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "id": "nda-drafting",
+  "name": "NDA Drafting",
+  "category": "Drafting & Writing",
+  "audience": [
+    "lawyer"
+  ],
+  "description": "Draft a mutual or one-way NDA",
+  "instruction": "Draft an NDA: definition of confidential information, exclusions, permitted use, term, return or destruction, remedies and governing law.",
+  "needs_document": false,
+  "output": "draft",
+  "keywords": [
+    "draft",
+    "drafting",
+    "mutual"
+  ]
+}

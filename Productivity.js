@@ -1,513 +1,209 @@
-import React, { useEffect, useState } from "react";
-import { RedlineResult } from "./ContractIntelligence";
+import React, { useCallback, useEffect, useState } from "react";
+import { api } from "./api";
 import "./Productivity.css";
 
-// Backend address. Change this one line if the Python backend is not on port 8000.
-// A page can also set window.DRAFTMATE_API before this loads (the demo page does).
-const API =
-  typeof window !== "undefined" && window.DRAFTMATE_API !== undefined
-    ? window.DRAFTMATE_API
-    : "http://localhost:8000";
+const STORE_KEY = "m3_tracker_v1";
+const load = () => { try { return JSON.parse(localStorage.getItem(STORE_KEY)) || []; } catch (e) { return []; } };
+const persist = (items) => { try { localStorage.setItem(STORE_KEY, JSON.stringify(items)); } catch (e) { /* storage unavailable */ } };
 
-const SAMPLE = `RENTAL AGREEMENT
-
-This Agreement is effective from 1 November 2026.
-
-The Tenant shall pay a monthly rent of Rs. 25,000 on or before the 5th day of each month.
-The Tenant must pay the security deposit of Rs. 75,000 by 15/11/2026.
-The Tenant shall submit police verification documents within 15 days of joining.
-Either party may terminate this Agreement by giving thirty (30) days' notice in writing.
-The Landlord shall return the security deposit within 30 days of the Tenant vacating the premises.
-The Tenant shall keep the premises in good condition.
-This Agreement shall expire on 31 October 2027 unless renewed.`;
-
-const GROUPS = [
-  ["overdue", "Overdue", "bad"],
-  ["due_soon", "Due in the next 30 days", "warn"],
-  ["upcoming", "Upcoming", "ok"],
-  ["needs_start_date", "Needs an effective date to be dated", "mod"],
-  ["event_based", "Runs from an event, not a calendar date", "mod"],
-  ["notice_period", "Notice periods", "mod"],
-  ["recurring", "Recurring duties", "mod"],
-  ["undated", "Obligations with no stated deadline", "mute"],
-];
-
-const STORE = "draftmate.tracker.done";
-
-function loadDone() {
-  try {
-    return JSON.parse(window.localStorage.getItem(STORE) || "{}");
-  } catch (e) {
-    return {};
-  }
+function dueLabel(d) {
+  if (d == null) return "";
+  if (d < 0) return `${-d} days overdue`;
+  if (d === 0) return "Due today";
+  return `in ${d} days`;
 }
+const dueClass = (d) => (d == null ? "" : d < 0 ? "pr-overdue" : d <= 14 ? "pr-soon" : "");
 
-function saveDone(done) {
-  try {
-    window.localStorage.setItem(STORE, JSON.stringify(done));
-  } catch (e) {
-    /* private window or blocked storage: the tracker still works for this visit */
-  }
-}
-
-function fmtDate(iso) {
-  const [y, m, d] = iso.split("-").map(Number);
-  return new Date(y, m - 1, d).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
-}
-
-function daysText(n) {
-  if (n === 0) return "today";
-  if (n === 1) return "tomorrow";
-  return n > 0 ? `in ${n} days` : `${-n} day${n === -1 ? "" : "s"} overdue`;
-}
-
-function icsEscape(s) {
-  return s.replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\n/g, " ");
-}
-
-function downloadIcs(items) {
-  const dated = items.filter((i) => i.date);
-  const lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//DraftMate AI//Tracker//EN"];
-  dated.forEach((i) => {
-    const day = i.date.replace(/-/g, "");
-    lines.push(
-      "BEGIN:VEVENT",
-      `UID:draftmate-${i.id}-${day}@draftmate`,
-      `DTSTAMP:${new Date().toISOString().replace(/[-:]/g, "").slice(0, 15)}Z`,
-      `DTSTART;VALUE=DATE:${day}`,
-      `SUMMARY:${icsEscape(`${i.type}${i.party ? " (" + i.party + ")" : ""}: ${i.text.slice(0, 80)}`)}`,
-      `DESCRIPTION:${icsEscape(i.text)}`,
-      "END:VEVENT"
-    );
-  });
-  lines.push("END:VCALENDAR");
-  const blob = new Blob([lines.join("\r\n")], { type: "text/calendar" });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = "contract-deadlines.ics";
-  a.click();
-  URL.revokeObjectURL(a.href);
-}
-
-function Item({ it, done, onToggle }) {
-  const rel = it.relative;
-  return (
-    <article className={`pr-item ${done ? "done" : ""}`}>
-      <div className="pr-when">
-        {it.date ? (
-          <>
-            <strong>{fmtDate(it.date)}</strong>
-            <span>{daysText(it.days_left)}</span>
-          </>
-        ) : rel ? (
-          <strong>{rel.text}</strong>
-        ) : it.recurring ? (
-          <strong>{it.recurring}</strong>
-        ) : (
-          <strong>No date</strong>
-        )}
-      </div>
-      <div className="pr-body">
-        <div className="pr-tags">
-          <span className="pr-tag">{it.type}</span>
-          {it.party && <span className="pr-tag party">{it.party}</span>}
-          {it.is_obligation && <span className="pr-tag">Obligation</span>}
-        </div>
-        <p className="pr-quote">{it.text}</p>
-        {rel && rel.trigger && <p className="pr-note">Time limit: {rel.text} {rel.trigger}</p>}
-        {it.due_from_start && <p className="pr-note">Date worked out from the effective date you entered.</p>}
-      </div>
-      <label className="pr-done">
-        <input type="checkbox" checked={!!done} onChange={() => onToggle(it.text)} /> Done
-      </label>
-    </article>
-  );
-}
-
-function Deadlines() {
+function Tracker() {
   const [text, setText] = useState("");
-  const [start, setStart] = useState("");
-  const [res, setRes] = useState(null);
+  const [items, setItems] = useState(load);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
-  const [done, setDone] = useState(loadDone);
-  const [hideDone, setHideDone] = useState(false);
+  const [err, setErr] = useState("");
+  const [filter, setFilter] = useState("all");
 
-  async function extract() {
-    setBusy(true);
-    setError("");
+  const update = (next) => { setItems(next); persist(next); };
+
+  const extract = async () => {
+    setBusy(true); setErr("");
     try {
-      const r = await fetch(`${API}/contract/deadlines`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text, start_date: start || null }),
-      });
-      if (!r.ok) throw new Error(`Server returned ${r.status}`);
-      setRes(await r.json());
-    } catch (e) {
-      setRes(null);
-      setError("Could not read the contract. Is the backend running and CORS enabled?");
-    } finally {
-      setBusy(false);
-    }
-  }
+      const { items: found } = await api("/deadlines", { method: "POST", body: { text } });
+      const known = new Set(items.map((i) => i.title + (i.date || "")));
+      const fresh = found.filter((f) => !known.has(f.title + (f.date || "")))
+        .map((f) => ({ ...f, id: `${Date.now()}-${f.id}`, done: false }));
+      update([...items, ...fresh]);
+    } catch (e) { setErr(e.message); } finally { setBusy(false); }
+  };
+  const toggle = (id) => update(items.map((i) => (i.id === id ? { ...i, done: !i.done } : i)));
+  const remove = (id) => update(items.filter((i) => i.id !== id));
 
-  function toggle(key) {
-    const next = { ...done, [key]: !done[key] };
-    if (!next[key]) delete next[key];
-    setDone(next);
-    saveDone(next);
-  }
-
-  const s = res && res.summary;
-  const dated = res ? res.items.filter((i) => i.date) : [];
+  const shown = items.filter((i) => filter === "all" || i.type === filter)
+    .sort((a, b) => (a.date || "9999").localeCompare(b.date || "9999"));
+  const overdue = items.filter((i) => !i.done && i.days_left != null && i.days_left < 0).length;
+  const upcoming = items.filter((i) => !i.done && i.days_left != null && i.days_left >= 0 && i.days_left <= 14).length;
 
   return (
-    <div>
-      <header className="pr-header">
-        <h2 className="pr-h2">Deadline &amp; Obligation Tracker</h2>
-        <p className="pr-muted">
-          Finds dates, "within N days" deadlines and duties in a contract. Each item shows the exact sentence it came from. No AI is used, so nothing is invented.
-        </p>
-      </header>
-
-      <label className="pr-label" htmlFor="pr-text">Contract text</label>
-      <textarea
-        id="pr-text"
-        className="pr-textarea"
-        rows={10}
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        placeholder="Paste the contract text here"
-      />
-
-      <div className="pr-actions">
-        <label className="pr-start">
-          Effective date <span className="pr-muted">(optional)</span>
-          <input type="date" value={start} onChange={(e) => setStart(e.target.value)} />
-        </label>
-        <button className="pr-btn" onClick={extract} disabled={busy || text.trim().length < 10}>
-          {busy ? "Reading…" : "Find deadlines"}
-        </button>
-        <button className="pr-btn2" onClick={() => { setText(SAMPLE); setStart("2026-11-01"); setRes(null); }}>
-          Load sample contract
-        </button>
+    <section>
+      <textarea className="pr-text" rows={8} value={text} onChange={(e) => setText(e.target.value)} placeholder="Paste a contract to extract dates, notice periods and obligations" />
+      <button className="pr-btn" disabled={!text.trim() || busy} onClick={extract}>{busy ? "Extracting…" : "Add to tracker"}</button>
+      {err && <p className="pr-error">{err}</p>}
+      <div className="pr-summary">
+        <span className="pr-pill pr-overdue">{overdue} overdue</span>
+        <span className="pr-pill pr-soon">{upcoming} due in 14 days</span>
+        <span className="pr-pill">{items.filter((i) => i.done).length} done</span>
+        <select aria-label="Filter" value={filter} onChange={(e) => setFilter(e.target.value)}>
+          <option value="all">All items</option><option value="date">Dates</option>
+          <option value="period">Periods &amp; notice</option><option value="obligation">Obligations</option>
+        </select>
       </div>
-      {error && <p className="pr-error" role="alert">{error}</p>}
-
-      {res && (
-        <section aria-live="polite">
-          <p className="pr-summary">
-            <span className="pr-chip bad">{s.overdue} overdue</span>
-            <span className="pr-chip warn">{s.due_soon} due soon</span>
-            <span className="pr-chip ok">{s.upcoming} upcoming</span>
-            <span className="pr-chip">{s.total} items in total</span>
-          </p>
-          <div className="pr-tools">
-            {dated.length > 0 && (
-              <button className="pr-btn2" onClick={() => downloadIcs(dated)}>Download calendar file (.ics)</button>
-            )}
-            <label className="pr-check">
-              <input type="checkbox" checked={hideDone} onChange={(e) => setHideDone(e.target.checked)} /> Hide items marked done
-            </label>
-            <span className="pr-muted pr-fine">As of {fmtDate(res.today)}</span>
-          </div>
-          {!start && s.needs_start_date > 0 && (
-            <p className="pr-hint">Some deadlines count from the effective date. Enter it above to get calendar dates for them.</p>
-          )}
-          {res.items.length === 0 && <p className="pr-muted">No dates, deadlines or obligations were found in this text.</p>}
-          {GROUPS.map(([key, title, tone]) => {
-            const items = res.items.filter((i) => i.status === key && !(hideDone && done[i.text]));
-            if (!items.length) return null;
-            return (
-              <div key={key} className="pr-group">
-                <h2 className={`pr-group-title ${tone}`}>{title} <span>({items.length})</span></h2>
-                {items.map((it) => <Item key={it.id} it={it} done={done[it.text]} onToggle={toggle} />)}
-              </div>
-            );
-          })}
-        </section>
-      )}
-
-      <p className="pr-fine pr-muted">
-        Dates are read as written (DD/MM/YYYY for numeric dates). Check every item against the contract. A lawyer must review it.
-      </p>
-    </div>
+      {shown.length === 0 && <p className="pr-empty">Nothing tracked yet. Paste a contract above to start.</p>}
+      <ul className="pr-list">
+        {shown.map((i) => (
+          <li key={i.id} className={`pr-item ${i.done ? "pr-done" : ""}`}>
+            <input type="checkbox" checked={i.done} onChange={() => toggle(i.id)} aria-label={`Mark done: ${i.title}`} />
+            <div className="pr-body">
+              <p>{i.title}</p>
+              <small>
+                {i.type === "date" && <b className={dueClass(i.days_left)}>{i.date} · {dueLabel(i.days_left)}</b>}
+                {i.type === "period" && <b>{i.period}</b>}
+                {i.type === "obligation" && <b>Owed by: {i.party}</b>}
+              </small>
+            </div>
+            <button className="pr-x" onClick={() => remove(i.id)} aria-label="Remove">Remove</button>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
-}
-
-async function api(path, method = "GET", body) {
-  const r = await fetch(`${API}${path}`, {
-    method,
-    headers: body ? { "Content-Type": "application/json" } : undefined,
-    body: body ? JSON.stringify(body) : undefined,
-  });
-  let data = null;
-  try { data = await r.json(); } catch (e) { /* no body */ }
-  if (!r.ok) {
-    const d = data && data.detail;
-    throw new Error(typeof d === "string" ? d : `Server returned ${r.status}`);
-  }
-  return data;
-}
-
-function fmtStamp(iso) {
-  const d = new Date(iso);
-  return isNaN(d) ? iso : d.toLocaleString("en-IN", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
 }
 
 function Templates() {
   const [list, setList] = useState([]);
-  const [form, setForm] = useState({ name: "", category: "", approved_by: "", note: "", text: "" });
+  const [form, setForm] = useState({ name: "", category: "General", text: "" });
   const [open, setOpen] = useState(null);
-  const [msg, setMsg] = useState({ kind: "", text: "" });
-  const [clash, setClash] = useState(false);
+  const [err, setErr] = useState("");
+  const refresh = useCallback(() => api("/templates").then(setList).catch((e) => setErr(e.message)), []);
+  useEffect(() => { refresh(); }, [refresh]);
 
-  const load = () => api("/store/templates").then((d) => setList(d.templates)).catch(() => setMsg({ kind: "error", text: "Could not reach the backend." }));
-  useEffect(() => { load(); }, []);
-  const set = (k) => (e) => setForm({ ...form, [k]: e.target.value });
-
-  async function save(replace) {
-    setMsg({ kind: "", text: "" });
-    try {
-      const t = await api("/store/templates", "POST", { ...form, replace });
-      setMsg({ kind: "ok", text: t.replaced ? `Replaced "${t.name}".` : `Saved "${t.name}".` });
-      setClash(false);
-      setForm({ name: "", category: "", approved_by: "", note: "", text: "" });
-      load();
-    } catch (e) {
-      setClash(/already exists/.test(e.message));
-      setMsg({ kind: "error", text: e.message });
-    }
-  }
-
-  async function view(id) {
-    if (open && open.id === id) return setOpen(null);
-    try { setOpen(await api(`/store/templates/${id}`)); } catch (e) { setMsg({ kind: "error", text: e.message }); }
-  }
-
-  async function remove(t) {
-    if (!window.confirm(`Delete the template "${t.name}"? This cannot be undone.`)) return;
-    try { await api(`/store/templates/${t.id}`, "DELETE"); setOpen(null); load(); } catch (e) { setMsg({ kind: "error", text: e.message }); }
-  }
+  const save = async () => {
+    setErr("");
+    try { await api("/templates", { method: "POST", body: form }); setForm({ name: "", category: "General", text: "" }); refresh(); }
+    catch (e) { setErr(e.message); }
+  };
+  const view = async (id) => { setOpen(await api(`/templates/${id}`)); };
+  const del = async (id) => { await api(`/templates/${id}`, { method: "DELETE" }); if (open?.id === id) setOpen(null); refresh(); };
 
   return (
-    <div>
-      <header className="pr-header">
-        <h2 className="pr-h2">Approved templates</h2>
-        <p className="pr-muted">Save wording your team has approved, with who approved it and when. Reuse it instead of starting from a blank page.</p>
-      </header>
-      <div className="pr-form">
-        <label className="pr-label" htmlFor="tp-name">Template name</label>
-        <input id="tp-name" className="pr-input" value={form.name} onChange={set("name")} maxLength={120} placeholder="e.g. Employment agreement, India" />
-        <div className="pr-row">
-          <div><label className="pr-label" htmlFor="tp-cat">Category</label>
-            <input id="tp-cat" className="pr-input" value={form.category} onChange={set("category")} maxLength={60} placeholder="e.g. HR" /></div>
-          <div><label className="pr-label" htmlFor="tp-by">Approved by</label>
-            <input id="tp-by" className="pr-input" value={form.approved_by} onChange={set("approved_by")} maxLength={80} placeholder="Name of the lawyer or reviewer" /></div>
-        </div>
-        <label className="pr-label" htmlFor="tp-note">Note</label>
-        <input id="tp-note" className="pr-input" value={form.note} onChange={set("note")} maxLength={300} placeholder="Where to use it, what to check" />
-        <label className="pr-label" htmlFor="tp-text">Template text</label>
-        <textarea id="tp-text" className="pr-textarea" rows={7} value={form.text} onChange={set("text")} placeholder="Paste the approved wording" />
-        <div className="pr-actions">
-          <button className="pr-btn" disabled={!form.name.trim() || !form.text.trim()} onClick={() => save(false)}>Save template</button>
-          {clash && <button className="pr-btn2" onClick={() => save(true)}>Replace the existing one</button>}
-        </div>
-        {msg.text && <p className={msg.kind === "ok" ? "pr-okmsg" : "pr-error"} role="alert">{msg.text}</p>}
+    <section className="pr-grid">
+      <div>
+        <h3>Save an approved template</h3>
+        <input className="pr-input" placeholder="Template name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+        <input className="pr-input" placeholder="Category (e.g. Employment, NDA)" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} />
+        <textarea className="pr-text" rows={9} placeholder="Template text" value={form.text} onChange={(e) => setForm({ ...form, text: e.target.value })} />
+        <button className="pr-btn" disabled={!form.name.trim() || !form.text.trim()} onClick={save}>Save template</button>
+        {err && <p className="pr-error">{err}</p>}
       </div>
-
-      <h3 className="pr-h3">Saved templates ({list.length})</h3>
-      {list.length === 0 && <p className="pr-muted">No templates yet.</p>}
-      {list.map((t) => (
-        <article key={t.id} className="pr-item tpl">
-          <div className="pr-body">
-            <div className="pr-tags">
-              <strong>{t.name}</strong>
-              {t.category && <span className="pr-tag">{t.category}</span>}
-            </div>
-            <p className="pr-note">
-              {t.approved_by ? `Approved by ${t.approved_by}` : "Approver not recorded"} · {fmtStamp(t.approved_at)}
-            </p>
-            {t.note && <p className="pr-note">{t.note}</p>}
-            {open && open.id === t.id ? <pre className="pr-pre">{open.text}</pre> : <p className="pr-quote">{t.preview}…</p>}
-            <div className="pr-actions">
-              <button className="pr-btn2" onClick={() => view(t.id)}>{open && open.id === t.id ? "Hide" : "View full text"}</button>
-              {open && open.id === t.id && (
-                <button className="pr-btn2" onClick={() => { try { navigator.clipboard.writeText(open.text); setMsg({ kind: "ok", text: "Copied." }); } catch (e) { setMsg({ kind: "error", text: "Could not copy. Select the text instead." }); } }}>Copy</button>
-              )}
-              <button className="pr-btn2 danger" onClick={() => remove(t)}>Delete</button>
-            </div>
+      <div>
+        <h3>Saved templates ({list.length})</h3>
+        {list.length === 0 && <p className="pr-empty">No templates saved yet.</p>}
+        <ul className="pr-list">
+          {list.map((t) => (
+            <li key={t.id} className="pr-item">
+              <div className="pr-body"><p>{t.name}</p><small>{t.category} · {t.created_at.slice(0, 10)}</small></div>
+              <button className="pr-x" onClick={() => view(t.id)}>View</button>
+              <button className="pr-x" onClick={() => del(t.id)}>Delete</button>
+            </li>
+          ))}
+        </ul>
+        {open && (
+          <div className="pr-preview">
+            <h4>{open.name}</h4><pre>{open.text}</pre>
+            <button className="pr-x" onClick={() => navigator.clipboard?.writeText(open.text)}>Copy text</button>
           </div>
-        </article>
-      ))}
-    </div>
+        )}
+      </div>
+    </section>
   );
 }
 
 function Versions() {
-  const [docs, setDocs] = useState([]);
-  const [cur, setCur] = useState(null);      // {id, title, versions[]}
-  const [title, setTitle] = useState("");
-  const [text, setText] = useState("");
-  const [note, setNote] = useState("");
-  const [author, setAuthor] = useState("");
-  const [pair, setPair] = useState({ a: "", b: "" });
+  const [docs, setDocs] = useState({});
+  const [form, setForm] = useState({ doc: "", note: "", text: "" });
+  const [pick, setPick] = useState([]);
   const [diff, setDiff] = useState(null);
-  const [msg, setMsg] = useState({ kind: "", text: "" });
+  const [msg, setMsg] = useState("");
+  const [err, setErr] = useState("");
+  const refresh = useCallback(() => api("/versions").then(setDocs).catch((e) => setErr(e.message)), []);
+  useEffect(() => { refresh(); }, [refresh]);
 
-  const loadDocs = () => api("/store/documents").then((d) => setDocs(d.documents)).catch(() => setMsg({ kind: "error", text: "Could not reach the backend." }));
-  useEffect(() => { loadDocs(); }, []);
-
-  async function openDoc(id) {
+  const save = async () => {
+    setErr(""); setMsg("");
     try {
-      const d = await api(`/store/documents/${id}/versions`);
-      setCur(d); setDiff(null);
-      const v = d.versions;
-      setPair(v.length > 1 ? { a: String(v[1].n), b: String(v[0].n) } : { a: "", b: "" });
-    } catch (e) { setMsg({ kind: "error", text: e.message }); }
-  }
+      const v = await api("/versions", { method: "POST", body: form });
+      setMsg(v.unchanged ? `No changes since v${v.version}, nothing saved.` : `Saved as v${v.version}.`);
+      refresh();
+    } catch (e) { setErr(e.message); }
+  };
+  const toggle = (id) => setPick((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id].slice(-2)));
+  const compare = async () => {
+    const [a, b] = await Promise.all(pick.map((id) => api(`/versions/${id}`)));
+    setDiff({ a, b, res: await api("/compare", { method: "POST", body: { text_a: a.text, text_b: b.text } }) });
+  };
 
-  async function save() {
-    setMsg({ kind: "", text: "" });
-    try {
-      let doc = cur;
-      if (!doc) {
-        const created = await api("/store/documents", "POST", { title });
-        doc = { id: created.id, title: created.title };
-      }
-      const r = await api(`/store/documents/${doc.id}/versions`, "POST", { text, note, author });
-      setMsg(r.unchanged
-        ? { kind: "warn", text: `Nothing saved: this text is identical to version ${r.version.n}.` }
-        : { kind: "ok", text: `Saved as version ${r.version.n}.` });
-      setNote("");
-      await openDoc(doc.id);
-      loadDocs();
-    } catch (e) { setMsg({ kind: "error", text: e.message }); }
-  }
-
-  async function compare() {
-    try { setDiff(await api(`/store/documents/${cur.id}/diff?a=${pair.a}&b=${pair.b}`)); } catch (e) { setMsg({ kind: "error", text: e.message }); }
-  }
-
-  async function loadIntoEditor(n) {
-    try { const v = await api(`/store/documents/${cur.id}/versions/${n}`); setText(v.text); setMsg({ kind: "ok", text: `Version ${n} loaded into the editor. Edit it and save to make a new version.` }); }
-    catch (e) { setMsg({ kind: "error", text: e.message }); }
-  }
-
-  async function restore(n) {
-    if (!window.confirm(`Restore version ${n}? It will be saved as a new latest version. No history is lost.`)) return;
-    try {
-      const r = await api(`/store/documents/${cur.id}/restore`, "POST", { n, author });
-      setMsg(r.unchanged ? { kind: "warn", text: `Version ${n} is already the latest text.` } : { kind: "ok", text: `Restored as version ${r.version.n}.` });
-      await openDoc(cur.id); loadDocs();
-    } catch (e) { setMsg({ kind: "error", text: e.message }); }
-  }
-
-  const versions = cur ? cur.versions : [];
   return (
-    <div>
-      <header className="pr-header">
-        <h2 className="pr-h2">Version history</h2>
-        <p className="pr-muted">Every save is a new numbered version. Old versions are never changed or deleted, and restoring one makes a new version on top.</p>
-      </header>
-
-      <div className="pr-row top">
-        <div>
-          <h3 className="pr-h3">Documents</h3>
-          {docs.length === 0 && <p className="pr-muted">No documents yet. Save one on the right.</p>}
-          <ul className="pr-doclist">
-            {docs.map((d) => (
-              <li key={d.id}>
-                <button className={`pr-doc ${cur && cur.id === d.id ? "on" : ""}`} onClick={() => openDoc(d.id)}>
-                  <strong>{d.title}</strong>
-                  <span>{d.versions} version{d.versions === 1 ? "" : "s"}{d.updated_at ? ` · ${fmtStamp(d.updated_at)}` : ""}</span>
-                </button>
-              </li>
-            ))}
-          </ul>
-          {cur && <button className="pr-btn2" onClick={() => { setCur(null); setDiff(null); setText(""); setTitle(""); }}>Start a new document</button>}
-        </div>
-        <div>
-          <h3 className="pr-h3">{cur ? `Save a new version of "${cur.title}"` : "Save a new document"}</h3>
-          {!cur && (
-            <>
-              <label className="pr-label" htmlFor="vh-title">Document title</label>
-              <input id="vh-title" className="pr-input" value={title} onChange={(e) => setTitle(e.target.value)} maxLength={120} placeholder="e.g. Acme services agreement" />
-            </>
-          )}
-          <label className="pr-label" htmlFor="vh-text">Text</label>
-          <textarea id="vh-text" className="pr-textarea" rows={9} value={text} onChange={(e) => setText(e.target.value)} placeholder="Paste this version of the document" />
-          <div className="pr-row">
-            <div><label className="pr-label" htmlFor="vh-note">What changed? (optional)</label>
-              <input id="vh-note" className="pr-input" value={note} onChange={(e) => setNote(e.target.value)} maxLength={300} /></div>
-            <div><label className="pr-label" htmlFor="vh-by">Your name (optional)</label>
-              <input id="vh-by" className="pr-input" value={author} onChange={(e) => setAuthor(e.target.value)} maxLength={80} /></div>
-          </div>
-          <div className="pr-actions">
-            <button className="pr-btn" disabled={!text.trim() || (!cur && !title.trim())} onClick={save}>Save version</button>
-          </div>
-        </div>
+    <section className="pr-grid">
+      <div>
+        <h3>Save a new version</h3>
+        <input className="pr-input" placeholder="Document name (e.g. Employment contract – Asha)" value={form.doc} onChange={(e) => setForm({ ...form, doc: e.target.value })} />
+        <input className="pr-input" placeholder="What changed? (optional)" value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} />
+        <textarea className="pr-text" rows={9} placeholder="Contract text" value={form.text} onChange={(e) => setForm({ ...form, text: e.target.value })} />
+        <button className="pr-btn" disabled={!form.doc.trim() || !form.text.trim()} onClick={save}>Save version</button>
+        {msg && <p className="pr-ok">{msg}</p>}{err && <p className="pr-error">{err}</p>}
       </div>
-      {msg.text && <p className={msg.kind === "ok" ? "pr-okmsg" : msg.kind === "warn" ? "pr-hint" : "pr-error"} role="alert">{msg.text}</p>}
-
-      {cur && (
-        <section>
-          <h3 className="pr-h3">History of "{cur.title}"</h3>
-          {versions.length === 0 && <p className="pr-muted">No versions saved yet.</p>}
-          {versions.map((v, i) => (
-            <article key={v.n} className="pr-item ver">
-              <div className="pr-when"><strong>Version {v.n}</strong><span>{i === 0 ? "latest" : ""}</span></div>
-              <div className="pr-body">
-                <p className="pr-note">{fmtStamp(v.created_at)}{v.author ? ` · ${v.author}` : ""} · {v.words} words · fingerprint {v.sha}</p>
-                {v.note && <p className="pr-quote">{v.note}</p>}
-                <div className="pr-actions">
-                  <button className="pr-btn2" onClick={() => loadIntoEditor(v.n)}>Open in editor</button>
-                  {i !== 0 && <button className="pr-btn2" onClick={() => restore(v.n)}>Restore this version</button>}
-                </div>
-              </div>
-            </article>
-          ))}
-          {versions.length > 1 && (
-            <div className="pr-compare">
-              <h3 className="pr-h3">Compare two versions</h3>
-              <div className="pr-actions">
-                <label className="pr-start">From
-                  <select value={pair.a} onChange={(e) => setPair({ ...pair, a: e.target.value })}>
-                    {versions.map((v) => <option key={v.n} value={v.n}>Version {v.n}</option>)}
-                  </select></label>
-                <label className="pr-start">To
-                  <select value={pair.b} onChange={(e) => setPair({ ...pair, b: e.target.value })}>
-                    {versions.map((v) => <option key={v.n} value={v.n}>Version {v.n}</option>)}
-                  </select></label>
-                <button className="pr-btn" onClick={compare} disabled={!pair.a || !pair.b}>Show changes</button>
-              </div>
-              {diff && (
-                <div className="ci-page ci-embed">
-                  <p className="pr-muted">Version {diff.from.n} → version {diff.to.n}</p>
-                  <RedlineResult data={diff} onlyChanges />
-                </div>
-              )}
-            </div>
-          )}
-        </section>
-      )}
-    </div>
+      <div>
+        <h3>Version history</h3>
+        {Object.keys(docs).length === 0 && <p className="pr-empty">No versions saved yet.</p>}
+        {Object.entries(docs).map(([name, vs]) => (
+          <div key={name} className="pr-doc">
+            <h4>{name}</h4>
+            <ul className="pr-list">
+              {[...vs].reverse().map((v) => (
+                <li key={v.id} className="pr-item">
+                  <input type="checkbox" checked={pick.includes(v.id)} onChange={() => toggle(v.id)} aria-label={`Select v${v.version}`} />
+                  <div className="pr-body"><p>v{v.version}{v.note ? ` – ${v.note}` : ""}</p><small>{v.created_at.replace("T", " ").slice(0, 16)}</small></div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+        <button className="pr-btn" disabled={pick.length !== 2} onClick={compare}>Compare selected (pick 2)</button>
+        {diff && (
+          <div className="pr-preview">
+            <h4>{diff.a.doc}: v{diff.a.version} → v{diff.b.version}</h4>
+            <p>{diff.res.stats.added} added · {diff.res.stats.removed} removed · {diff.res.stats.changed} changed · {diff.res.needs_review} need review</p>
+            {diff.res.changes.map((c, i) => (
+              <p key={i} className="pr-redline">{c.words.map((w, j) => <span key={j} className={`pr-w-${w.op}`}>{w.t} </span>)}</p>
+            ))}
+          </div>
+        )}
+      </div>
+    </section>
   );
 }
 
-const TABS = [["deadlines", "Deadlines"], ["templates", "Templates"], ["versions", "Version history"]];
+const TABS = [["tracker", "Deadline tracker"], ["templates", "Templates"], ["versions", "Version history"]];
 
 export default function Productivity() {
-  const [tab, setTab] = useState("deadlines");
+  const [tab, setTab] = useState("tracker");
   return (
     <main className="pr-page">
-      <div className="pr-tabs" role="tablist" aria-label="Productivity tools">
+      <h1>Productivity</h1>
+      <p className="pr-sub">Keep track of what is due, reuse approved templates, and see how each contract changed over time.</p>
+      <div className="pr-tabs" role="tablist">
         {TABS.map(([id, label]) => (
-          <button key={id} role="tab" aria-selected={tab === id} className={`pr-tab ${tab === id ? "on" : ""}`} onClick={() => setTab(id)}>{label}</button>
+          <button key={id} role="tab" aria-selected={tab === id} className={tab === id ? "active" : ""} onClick={() => setTab(id)}>{label}</button>
         ))}
       </div>
-      {tab === "deadlines" && <Deadlines />}
+      {tab === "tracker" && <Tracker />}
       {tab === "templates" && <Templates />}
       {tab === "versions" && <Versions />}
     </main>

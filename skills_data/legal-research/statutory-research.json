@@ -1,0 +1,20 @@
+{
+  "id": "statutory-research",
+  "name": "Statutory Research",
+  "category": "Legal Research",
+  "audience": [
+    "lawyer",
+    "student"
+  ],
+  "description": "Find relevant statutes",
+  "instruction": "Identify relevant statutes, sections and rules, summarise each provision, and note amendments to be checked on the official source.",
+  "needs_document": false,
+  "output": "analysis",
+  "keywords": [
+    "find",
+    "relevant",
+    "research",
+    "statutes",
+    "statutory"
+  ]
+}

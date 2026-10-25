@@ -1,0 +1,18 @@
+{
+  "id": "reply-drafting",
+  "name": "Reply Drafting",
+  "category": "Drafting & Writing",
+  "audience": [
+    "lawyer"
+  ],
+  "description": "Reply to a notice or pleading",
+  "instruction": "Draft a para-wise reply to the supplied notice or pleading: preliminary objections, para-wise response, additional facts, prayer. State admissions and denials explicitly.",
+  "needs_document": true,
+  "output": "draft",
+  "keywords": [
+    "drafting",
+    "notice",
+    "pleading",
+    "reply"
+  ]
+}

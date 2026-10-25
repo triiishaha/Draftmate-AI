@@ -1,0 +1,21 @@
+{
+  "id": "academic-writing-student",
+  "name": "Academic Writing",
+  "category": "Drafting & Writing",
+  "audience": [
+    "student"
+  ],
+  "description": "Essays, case notes, papers",
+  "instruction": "Help with academic legal writing: argument structure, signposting and footnote placeholders in the requested citation style. Never fabricate sources.",
+  "needs_document": false,
+  "output": "draft",
+  "keywords": [
+    "academic",
+    "case",
+    "essays",
+    "notes",
+    "papers",
+    "student",
+    "writing"
+  ]
+}

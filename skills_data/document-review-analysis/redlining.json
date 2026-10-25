@@ -1,0 +1,19 @@
+{
+  "id": "redlining",
+  "name": "Redlining",
+  "category": "Document Review & Analysis",
+  "audience": [
+    "lawyer"
+  ],
+  "description": "Propose tracked-style edits",
+  "instruction": "Produce redline edits: show deletions as ~~strikethrough~~ and additions in **bold**, each with a one-line reason. Keep unchanged text exactly as is.",
+  "needs_document": true,
+  "output": "draft",
+  "keywords": [
+    "edits",
+    "propose",
+    "redlining",
+    "style",
+    "tracked"
+  ]
+}

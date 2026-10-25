@@ -1,0 +1,18 @@
+{
+  "id": "mock-test-student",
+  "name": "Mock Test",
+  "category": "Student Learning & Exam Prep",
+  "audience": [
+    "student"
+  ],
+  "description": "Take a mock test",
+  "instruction": "Run a timed-style mock test one question at a time, then score it and explain each answer.",
+  "needs_document": false,
+  "output": "study",
+  "keywords": [
+    "mock",
+    "student",
+    "take",
+    "test"
+  ]
+}

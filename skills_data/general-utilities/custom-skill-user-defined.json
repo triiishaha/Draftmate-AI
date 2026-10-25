@@ -1,0 +1,21 @@
+{
+  "id": "custom-skill-user-defined",
+  "name": "Custom Skill (User Defined)",
+  "category": "General Utilities",
+  "audience": [
+    "lawyer",
+    "student"
+  ],
+  "description": "Run your own instructions",
+  "instruction": "Follow the user's own instructions for this skill exactly. Apply the standard legal-safety rules.",
+  "needs_document": false,
+  "output": "draft",
+  "keywords": [
+    "custom",
+    "defined",
+    "instructions",
+    "skill",
+    "user",
+    "your"
+  ]
+}

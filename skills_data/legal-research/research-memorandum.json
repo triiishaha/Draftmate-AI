@@ -1,0 +1,18 @@
+{
+  "id": "research-memorandum",
+  "name": "Research Memorandum",
+  "category": "Legal Research",
+  "audience": [
+    "lawyer"
+  ],
+  "description": "Write a research memo",
+  "instruction": "Write a research memorandum: question presented, short answer, facts, discussion with authorities and conclusion. Mark unverified authorities.",
+  "needs_document": false,
+  "output": "draft",
+  "keywords": [
+    "memo",
+    "memorandum",
+    "research",
+    "write"
+  ]
+}

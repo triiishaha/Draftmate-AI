@@ -1,0 +1,18 @@
+{
+  "id": "case-brief-student",
+  "name": "Case Brief",
+  "category": "Case & Judgment Tools",
+  "audience": [
+    "student"
+  ],
+  "description": "Brief a case for class",
+  "instruction": "Write a case brief: facts, procedural history, issue, holding, reasoning and significance. Use only the supplied judgment.",
+  "needs_document": true,
+  "output": "summary",
+  "keywords": [
+    "brief",
+    "case",
+    "class",
+    "student"
+  ]
+}

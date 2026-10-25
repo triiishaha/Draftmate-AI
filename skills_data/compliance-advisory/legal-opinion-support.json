@@ -1,0 +1,17 @@
+{
+  "id": "legal-opinion-support",
+  "name": "Legal Opinion Support",
+  "category": "Compliance & Advisory",
+  "audience": [
+    "lawyer"
+  ],
+  "description": "Support an opinion",
+  "instruction": "Gather the facts, assumptions, authorities and open questions needed for the opinion, structured as an opinion outline.",
+  "needs_document": false,
+  "output": "analysis",
+  "keywords": [
+    "legal",
+    "opinion",
+    "support"
+  ]
+}

@@ -3,3 +3,7 @@
    *.pem
    __pycache__/
    .pytest_cache/
+
+contract_store.json
+.env
+__pycache__/

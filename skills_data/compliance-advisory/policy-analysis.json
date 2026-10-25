@@ -1,0 +1,17 @@
+{
+  "id": "policy-analysis",
+  "name": "Policy Analysis",
+  "category": "Compliance & Advisory",
+  "audience": [
+    "lawyer"
+  ],
+  "description": "Analyse a policy",
+  "instruction": "Analyse the policy: purpose, scope, obligations, gaps against the stated law, and recommended changes.",
+  "needs_document": true,
+  "output": "analysis",
+  "keywords": [
+    "analyse",
+    "analysis",
+    "policy"
+  ]
+}

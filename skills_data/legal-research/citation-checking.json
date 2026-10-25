@@ -1,0 +1,19 @@
+{
+  "id": "citation-checking",
+  "name": "Citation Checking",
+  "category": "Legal Research",
+  "audience": [
+    "lawyer",
+    "student"
+  ],
+  "description": "Check every citation",
+  "instruction": "Extract every citation and classify each as Verified, Partially Verified or Unverified, with reasons. Never confirm a citation you cannot support.",
+  "needs_document": true,
+  "output": "table",
+  "keywords": [
+    "check",
+    "checking",
+    "citation",
+    "every"
+  ]
+}

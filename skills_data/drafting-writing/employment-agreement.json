@@ -1,0 +1,17 @@
+{
+  "id": "employment-agreement",
+  "name": "Employment Agreement",
+  "category": "Drafting & Writing",
+  "audience": [
+    "lawyer"
+  ],
+  "description": "Draft an employment agreement",
+  "instruction": "Draft an employment agreement: role, compensation, probation, notice period, leave, confidentiality, IP, reasonable restraints, termination.",
+  "needs_document": false,
+  "output": "draft",
+  "keywords": [
+    "agreement",
+    "draft",
+    "employment"
+  ]
+}

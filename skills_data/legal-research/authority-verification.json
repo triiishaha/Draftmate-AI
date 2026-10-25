@@ -1,0 +1,20 @@
+{
+  "id": "authority-verification",
+  "name": "Authority Verification",
+  "category": "Legal Research",
+  "audience": [
+    "lawyer",
+    "student"
+  ],
+  "description": "Verify cited authorities",
+  "instruction": "For each authority check court, year, parties, proposition and whether it is still good law. Flag uncertainty explicitly.",
+  "needs_document": true,
+  "output": "table",
+  "keywords": [
+    "authorities",
+    "authority",
+    "cited",
+    "verification",
+    "verify"
+  ]
+}
