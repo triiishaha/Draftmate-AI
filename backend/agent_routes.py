@@ -23,6 +23,7 @@ class RunIn(BaseModel):
     documents: List[Doc] = []
     tier: str = "gemini"
     budget_tokens: int = 3000
+    full_text: Optional[str] = None      # the document being worked on: always sent whole, never trimmed
 class ContextIn(BaseModel):
     documents: List[Doc]
     query: str
@@ -58,10 +59,14 @@ def skill_detail(skill_id: str):
 def skills_run(body: RunIn):
     s = registry.get(body.skill_id)
     if not s: raise HTTPException(404, "Skill not found")
-    if s["needs_document"] and not body.documents:
+    if s["needs_document"] and not body.documents and not (body.full_text or "").strip():
         raise HTTPException(422, f"{s['name']} needs a document. Upload or select one first.")
     ctx = tokens.build_context([d.dict() for d in body.documents], body.instruction, body.budget_tokens)
-    user = body.instruction + (f"\n\n--- REFERENCE MATERIAL ---\n{ctx['context']}" if ctx["context"] else "")
+    user = body.instruction
+    if (body.full_text or "").strip():
+        user += f"\n\n--- CURRENT DOCUMENT (complete) ---\n{body.full_text.strip()}"
+    if ctx["context"]:
+        user += f"\n\n--- REFERENCE MATERIAL ---\n{ctx['context']}"
     out = llm.complete(registry.system_prompt(s), user, body.tier)
     return {"skill": registry.public(s), "result": out, "context_stats": ctx["stats"]}
 

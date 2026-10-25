@@ -90,6 +90,19 @@ app.get("/api/research", (req, res) => {
 });
 
 // Legal document drafting
+
+// Turn an AI failure into a message the user can act on.
+function aiFailure(error, fallback) {
+  const text = String((error && error.message) || error || "");
+  if (/quota exceeded|exceeded your current quota|RESOURCE_EXHAUSTED/i.test(text)) {
+    return { status: 429, error: "Gemini says this API key has used up its quota for now. Wait a minute and try again, or use a key with billing enabled." };
+  }
+  if (/rejected the API key/i.test(text)) {
+    return { status: 401, error: "Gemini rejected the API key. Check GEMINI_API_KEY in server/.env." };
+  }
+  return { status: 500, error: fallback };
+}
+
 app.post("/api/draft", async (req, res) => {
   try {
     const { documentType, jurisdiction, details, styleGuide } = req.body || {};
@@ -167,6 +180,7 @@ Rules:
 - Clearly flag legal details that need verification.
 - Include an "Items to verify" section.
 - Explain that the document should be reviewed before use.
+- Write plain text only. Do not use markdown symbols such as #, ** or ---. Use UPPERCASE headings and numbered clauses.
 `;
 
     const draft = await generateAIText(prompt);
@@ -175,10 +189,8 @@ Rules:
   } catch (error) {
     console.error("Draft generation error:", error.message);
 
-    return res.status(500).json({
-      error:
-        "Draft generation failed. Check the backend terminal for the API error.",
-    });
+    const f = aiFailure(error, "Draft generation failed. Check the backend terminal for the API error.");
+    return res.status(f.status).json({ error: f.error });
   }
 });
 
@@ -255,10 +267,8 @@ Instructions:
   } catch (error) {
     console.error("Research generation error:", error.message);
 
-    return res.status(500).json({
-      error:
-        "Research failed. Check the backend terminal for the Gemini API error.",
-    });
+    const f = aiFailure(error, "Research failed. Check the backend terminal for the Gemini API error.");
+    return res.status(f.status).json({ error: f.error });
   }
 });
 
@@ -320,9 +330,8 @@ Assistant:`;
     return res.json({ answer });
   } catch (error) {
     console.error("Chat error:", error.message);
-    return res.status(500).json({
-      error: "The assistant couldn't respond. Check the backend terminal for the API error.",
-    });
+    const f = aiFailure(error, "The assistant couldn't respond. Check the backend terminal for the API error.");
+    return res.status(f.status).json({ error: f.error });
   }
 });
 

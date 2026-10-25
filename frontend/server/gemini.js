@@ -9,6 +9,7 @@ const msgOf = (e) => String((e && (e.message || e)) || "");
 
 const MODEL_GONE = /404|NOT_FOUND|no longer available/i;
 const KEY_PROBLEM = /API_KEY_INVALID|API key not valid|PERMISSION_DENIED|UNAUTHENTICATED|\b40[13]\b/i;
+const QUOTA = /exceeded your current quota|RESOURCE_EXHAUSTED|quota/i;
 const RETRYABLE = /503|UNAVAILABLE|429|RESOURCE_EXHAUSTED|overload|high demand|did not respond|fetch failed|ECONN|ETIMEDOUT|EAI_AGAIN|socket|\b500\b|INTERNAL|empty response/i;
 
 function createGenerator(ai, configuredModels, options = {}) {
@@ -69,9 +70,12 @@ function createGenerator(ai, configuredModels, options = {}) {
     const failures = [];
     let round = 0;
     let discovered = false;
+    let quotaRounds = 0;
 
     while (Date.now() - started < deadlineMs) {
       let anyRetryable = false;
+      let failedThisRound = 0;
+      let quotaThisRound = 0;
       for (const model of models) {
         if (dead.has(model)) continue;
         if (Date.now() - started >= deadlineMs) break;
@@ -80,12 +84,18 @@ function createGenerator(ai, configuredModels, options = {}) {
         } catch (error) {
           const message = msgOf(error);
           failures.push(`${model}: ${message.slice(0, 140)}`);
+          failedThisRound += 1;
+          if (QUOTA.test(message)) quotaThisRound += 1;
           log(`Gemini ${model} failed (round ${round + 1}): ${message.slice(0, 140)}`);
           if (KEY_PROBLEM.test(message)) throw new Error(`Gemini rejected the API key. ${message.slice(0, 200)}`);
           if (MODEL_GONE.test(message)) dead.add(model);
           else if (RETRYABLE.test(message)) anyRetryable = true;
         }
       }
+
+      // Quota errors don't clear in seconds: stop hammering the key and say so.
+      quotaRounds = failedThisRound > 0 && quotaThisRound === failedThisRound ? quotaRounds + 1 : 0;
+      if (quotaRounds >= 2) throw new Error(`Gemini quota exceeded for this API key. ${failures.slice(-2).join(" | ")}`);
 
       if (!discovered) {
         discovered = true;

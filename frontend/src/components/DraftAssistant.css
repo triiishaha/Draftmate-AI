@@ -15,3 +15,16 @@
 .da-error{color:#b00020;margin:0;font-size:.9rem}
 .da-note{color:#27553a;margin:0;font-size:.9rem}
 .da-tools{display:flex;gap:8px;flex-wrap:wrap}
+
+.da-attach{border:1px solid #d9dee8;border-radius:10px;padding:10px 12px;background:#fafbfd}
+.da-attach summary{cursor:pointer;font-weight:600;font-size:.92rem}
+.da-row{display:flex;gap:12px;flex-wrap:wrap;margin-top:10px}
+.da-row label,.da-format{display:flex;flex-direction:column;gap:4px;font-size:.85rem}
+.da-row select,.da-format select{padding:6px 8px;border:1px solid #c9d0de;border-radius:8px;background:#fff}
+.da-picked{margin:8px 0 0;padding-left:18px;font-size:.88rem}
+.da-picked button{border:0;background:none;color:#4a5ab9;cursor:pointer;text-decoration:underline}
+.da-hint{margin:8px 0 0;font-size:.82rem;color:#5a6178}
+.da-check{border-radius:8px;padding:8px 10px;font-size:.88rem}
+.da-check p{margin:4px 0 0}
+.da-check.ok{background:#eaf6ee;border:1px solid #b5dcc1;color:#1e5a34}
+.da-check.warn{background:#fff4e5;border:1px solid #f0c98a;color:#7a4a00}

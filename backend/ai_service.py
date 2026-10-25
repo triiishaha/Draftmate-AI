@@ -44,6 +44,9 @@ _RETRY = re.compile(r"503|UNAVAILABLE|429|RESOURCE_EXHAUSTED|overload|high deman
 _pool = ThreadPoolExecutor(max_workers=4)
 
 
+_QUOTA = re.compile(r"exceeded your current quota|RESOURCE_EXHAUSTED|quota", re.I)
+
+
 def _msg(e):
     return " ".join(str(getattr(e, "message", None) or e).split())
 
@@ -80,9 +83,10 @@ def _generate(prompt, sleep=time.sleep, deadline=None, base_delay=2, max_delay=1
     deadline = DEADLINE if deadline is None else deadline
     started = time.time()
     models, dead, failures = list(MODELS), set(), []
-    rounds, discovered = 0, False
+    rounds, discovered, quota_rounds = 0, False, 0
     while time.time() - started < deadline:
         any_retryable = False
+        failed_now = quota_now = 0
         for model in models:
             if model in dead or time.time() - started >= deadline:
                 continue
@@ -91,12 +95,19 @@ def _generate(prompt, sleep=time.sleep, deadline=None, base_delay=2, max_delay=1
             except Exception as e:
                 text = _msg(e)
                 failures.append(f"{model}: {text[:140]}")
+                failed_now += 1
+                if _QUOTA.search(text):
+                    quota_now += 1
                 if _KEY.search(text):
                     raise RuntimeError("Gemini rejected the API key. " + text[:200])
                 if _GONE.search(text):
                     dead.add(model)
                 elif _RETRY.search(text):
                     any_retryable = True
+        # Quota errors do not clear in seconds: stop hammering the key and say so.
+        quota_rounds = quota_rounds + 1 if failed_now and quota_now == failed_now else 0
+        if quota_rounds >= 2:
+            raise RuntimeError("Gemini quota exceeded for this API key. " + " | ".join(failures[-2:]))
         if not discovered:
             discovered = True
             extra = _discover(models)

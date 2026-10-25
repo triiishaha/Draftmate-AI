@@ -49,9 +49,11 @@ def _numbering(text: str) -> str:
 
 
 def _defined_terms(text: str) -> list:
-    terms = re.findall(r"[\"“]([A-Z][A-Za-z ]{2,30})[\"”]", text)
+    """Only quoted terms introduced like (the "Landlord"), means "X" or referred to as "X". Plain quotations are ignored."""
+    terms = re.findall(r"(?:\(|\bmeans\b|referred to as|hereinafter|called)\s*,?\s*(?:the\s+|a\s+|an\s+)?[\"“]([A-Z][A-Za-z ]{1,28})[\"”]", text)
     seen, out = set(), []
     for t in terms:
+        t = t.strip()
         if t not in seen:
             seen.add(t); out.append(t)
     return out[:15]
@@ -128,6 +130,55 @@ def guide_from(p: dict) -> str:
     return "\n".join("- " + l if not l.startswith("IMPORTANT") else l for l in lines)
 
 
+MONTHS = "January|February|March|April|May|June|July|August|September|October|November|December"
+NUMBER_WORDS = {"one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8, "nine": 9, "ten": 10,
+                "fifteen": 15, "twenty": 20, "thirty": 30, "forty-five": 45, "sixty": 60, "ninety": 90}
+
+
+def facts(text: str) -> dict:
+    """Pull out the things a restyle must never change: money, dates, time limits, legal references, named people, defined terms."""
+    t = text or ""
+    out = {"amounts": set(), "dates": set(), "periods": set(), "legal references": set(), "names": set(), "defined terms": set()}
+    for m in re.finditer(r"(?:₹|Rs\.?|INR|\$|USD|€)\s?[\d,]+(?:\.\d+)?(?:\s?(?:lakhs?|crores?|thousand|million))?", t, re.I):
+        out["amounts"].add(re.sub(r"[\s,]", "", m.group(0)).upper().replace("RS.", "₹").replace("RS", "₹").replace("INR", "₹"))
+    for m in re.finditer(r"\b\d{1,2}[/.-]\d{1,2}[/.-]\d{2,4}\b|\b\d{1,2}(?:st|nd|rd|th)?\s+(?:%s)\s+\d{4}\b|\b(?:%s)\s+\d{1,2},?\s+\d{4}\b" % (MONTHS, MONTHS), t, re.I):
+        out["dates"].add(re.sub(r"(?<=\d)(st|nd|rd|th)", "", m.group(0).lower()).replace(",", ""))
+    for m in re.finditer(r"\b(\d+|%s)\s*(?:\(\d+\)\s*)?(days?|weeks?|months?|years?)\b" % "|".join(NUMBER_WORDS), t, re.I):
+        n = m.group(1).lower(); n = NUMBER_WORDS.get(n, n)
+        out["periods"].add(f"{n} {m.group(2).lower().rstrip('s')}")
+    for m in re.finditer(r"\b(?:Section|Sec\.|Article|Order|Rule)\s+\d+[A-Za-z]?(?:\(\d+\))?(?:\([a-z]\))?|\b[A-Z][A-Za-z]+(?:\s[A-Z][A-Za-z]+){0,4}\s+Act,?\s+(?:of\s+)?\d{4}", t):
+        out["legal references"].add(re.sub(r"\s+", " ", m.group(0)).replace("Sec.", "Section").strip(", "))
+    for m in re.finditer(r"\b(?:Mr|Ms|Mrs|Dr|Shri|Smt|M/s)\.?\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?", t):
+        out["names"].add(re.sub(r"\s+", " ", m.group(0)))
+    out["defined terms"] = set(_defined_terms(t))
+    return out
+
+
+def meaning_check(original: str, revised: str) -> dict:
+    a, b = facts(original), facts(revised)
+    missing = {k: sorted(a[k] - b[k]) for k in a if a[k] - b[k]}
+    added = {k: sorted(b[k] - a[k]) for k in a if b[k] - a[k]}
+    def modal(x):
+        low = x.lower()
+        return {m: len(re.findall(rf"\b{m}\b", low)) for m in ("shall", "must", "will", "may")}
+    ma, mb = modal(original), modal(revised)
+    # shall/will/must are often swapped when restyling: compare the combined count of binding verbs
+    bind_a, bind_b = ma["shall"] + ma["must"] + ma["will"], mb["shall"] + mb["must"] + mb["will"]
+    obligations = None
+    if bind_a and bind_b < bind_a * 0.7:
+        obligations = f"Binding verbs (shall/must/will) dropped from {bind_a} to {bind_b}. Some obligations may have been removed."
+    kept = sum(len(a[k] & b[k]) for k in a)
+    total = sum(len(a[k]) for k in a)
+    ok = not missing and not obligations
+    if total == 0:
+        summary = "No amounts, dates, time limits or names were found to compare. Read the revision to confirm the meaning."
+    elif ok:
+        summary = f"Meaning check passed: all {total} facts from the original are still there" + (f", and {sum(len(v) for v in added.values())} new ones appeared." if added else ".")
+    else:
+        summary = f"Check before applying: {total - kept} of {total} facts from the original are missing in the revision."
+    return {"ok": ok, "summary": summary, "kept": kept, "total": total, "missing": missing, "added": added, "obligations": obligations}
+
+
 try:
     import importlib.util
     from fastapi import APIRouter, HTTPException
@@ -138,6 +189,14 @@ try:
 
     class TextIn(BaseModel):
         text: str
+
+    class CheckIn(BaseModel):
+        original: str
+        revised: str
+
+    @router.post("/check")
+    def check_meaning(body: CheckIn):
+        return meaning_check(body.original, body.revised)
 
     @router.post("/analyze")
     def analyze_text(body: TextIn):
