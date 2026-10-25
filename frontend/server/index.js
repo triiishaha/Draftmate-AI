@@ -61,20 +61,16 @@ const documentGuidance = {
 };
 
 // Helper: generate text using Gemini
-async function generateAIText(prompt) {
-  const response = await ai.models.generateContent({
-    model: "gemini-3.8-flash",
-    contents: prompt,
-  });
+// Gemini calls: retries when a model is overloaded, falls back to other models. See gemini.js.
+// Optional in server/.env:  GEMINI_MODELS=gemini-3.8-flash,another-model
+const { createGenerator } = require("./gemini");
 
-  const text = response.text;
+const GEMINI_MODELS = (process.env.GEMINI_MODELS || "gemini-3.8-flash")
+  .split(",")
+  .map((name) => name.trim())
+  .filter(Boolean);
 
-  if (typeof text !== "string" || !text.trim()) {
-    throw new Error("Gemini returned an empty response.");
-  }
-
-  return text.trim();
-}
+const generateAIText = createGenerator(ai, GEMINI_MODELS);
 
 // Health check
 app.get("/api/health", (req, res) => {

@@ -6,6 +6,9 @@ Member 4 document pipeline over HTTP.
 """
 from __future__ import annotations
 
+import asyncio
+import os
+
 import importlib.util
 
 from fastapi import APIRouter, HTTPException
@@ -45,7 +48,13 @@ def _process(filename: str, data: bytes, command: str, max_tokens: int, ai: bool
             result["ai_response"] = generate_document_response(
                 action=result["action"], context=result["context"], transcript=command)
         except Exception as e:                                       # no key, no network, quota: keep the rest of the result
-            result["ai_error"] = f"AI response unavailable ({type(e).__name__}). The selected context is still returned."
+            msg = str(getattr(e, "message", None) or e)
+            key = os.getenv("GEMINI_API_KEY") or ""
+            if key:
+                msg = msg.replace(key, "[key]")                     # never echo a secret back to the browser
+            code = getattr(e, "code", None) or getattr(e, "status_code", None)
+            result["ai_error"] = (f"AI response unavailable ({type(e).__name__}{' ' + str(code) if code else ''}): "
+                                  f"{' '.join(msg.split())[:300]}. The selected context is still returned.")
     return result
 
 
@@ -56,7 +65,9 @@ if importlib.util.find_spec("multipart") or importlib.util.find_spec("python_mul
     async def document_process(file: UploadFile = File(...), command: str = Form(...),
                                max_tokens: int = Form(6000), ai: bool = Form(True)):
         data = await file.read(MAX_BYTES + 1)
-        return _process(file.filename or "", data, command, max(500, min(max_tokens, 200_000)), ai)
+        # run in a worker thread: Gemini retries can take a while and must not freeze the whole backend
+        return await asyncio.to_thread(_process, file.filename or "", data, command,
+                                       max(500, min(max_tokens, 200_000)), ai)
 else:
     @router.post("/document/process")
     async def document_process_unavailable():
