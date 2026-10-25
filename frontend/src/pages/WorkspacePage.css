@@ -1,0 +1,124 @@
+
+.workspace-page {
+  min-height: 100vh;
+  margin-left: 238px;
+  padding: 32px 40px;
+  background: #f7f8f5;
+  color: #26372c;
+  box-sizing: border-box;
+}
+
+.workspace-topline {
+  display: flex;
+  justify-content: space-between;
+  padding-bottom: 24px;
+  border-bottom: 1px solid #e4e9e2;
+  color: #657268;
+  font-size: 13px;
+}
+
+.workspace-status {
+  padding: 7px 12px;
+  border: 1px solid #dce5dc;
+  border-radius: 20px;
+  background: white;
+}
+
+.workspace-heading {
+  margin: 52px 0 32px;
+}
+
+.workspace-eyebrow {
+  color: #60806a;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+}
+
+.workspace-heading h1 {
+  margin: 12px 0;
+  color: #203b2b;
+  font-size: clamp(28px, 4vw, 42px);
+}
+
+.workspace-heading > p:last-child {
+  color: #748076;
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+.workspace-card {
+  max-width: 760px;
+  padding: 28px;
+  border: 1px solid #e4e9e2;
+  border-radius: 16px;
+  background: white;
+  box-shadow: 0 8px 28px rgba(32, 59, 43, 0.04);
+}
+
+.workspace-card label {
+  display: block;
+  margin-bottom: 12px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.workspace-card input {
+  width: 100%;
+  min-height: 52px;
+  padding: 14px 16px;
+  border: 1px solid #dfe5dd;
+  border-radius: 9px;
+  box-sizing: border-box;
+  font: inherit;
+}
+
+.workspace-card input:focus {
+  outline: 2px solid #64866d;
+}
+
+.workspace-card button {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 18px;
+  padding: 13px 20px;
+  border: none;
+  border-radius: 9px;
+  background: #203b2b;
+  color: white;
+  font: inherit;
+  cursor: pointer;
+}
+
+.workspace-card button:hover {
+  background: #31533d;
+}
+
+.workspace-note {
+  margin-top: 20px;
+  color: #899188;
+  font-size: 12px;
+}
+
+@media (max-width: 900px) {
+  .workspace-page {
+    margin-left: 205px;
+    padding: 28px 24px;
+  }
+}
+
+@media (max-width: 600px) {
+  .workspace-page {
+    margin-left: 64px;
+    padding: 22px 16px;
+  }
+
+  .workspace-heading {
+    margin-top: 36px;
+  }
+
+  .workspace-card {
+    padding: 20px;
+  }
+}

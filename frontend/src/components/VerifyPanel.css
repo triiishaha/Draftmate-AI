@@ -1,0 +1,26 @@
+.vp-panel {
+  margin-top: 22px; padding: 18px; border: 1px solid #d9e0d6; border-radius: 12px; background: #f7f8f5; color: #27382d;
+  --ok: #1e7d3c; --ok-bg: #e3f1e6; --warn: #8a5a00; --warn-bg: #fff3d6; --bad: #b3261e; --bad-bg: #fdeceb;
+}
+.vp-head { display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; align-items: center; }
+.vp-head h3 { margin: 0; font-size: 1rem; }
+.vp-head p { margin: 2px 0 0; font-size: 0.85rem; color: #5f6f64; }
+.vp-btn { padding: 9px 16px; font: inherit; font-weight: 700; cursor: pointer; color: #f8f7f2; background: #203b2b; border: 0; border-radius: 9px; }
+.vp-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+.vp-btn:focus-visible { outline: 2px solid #203b2b; outline-offset: 2px; }
+.vp-error { margin: 12px 0 0; padding: 10px 12px; border-radius: 8px; background: var(--bad-bg); color: var(--bad); }
+.vp-note { padding: 8px 10px; border-radius: 8px; background: var(--warn-bg); color: var(--warn); font-size: 0.9rem; }
+.vp-muted { color: #5f6f64; }
+.vp-fine { font-size: 0.8rem; margin-top: 12px; }
+.vp-summary { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 8px; }
+.vp-chip, .vp-badge { padding: 2px 10px; border-radius: 999px; font-size: 0.8rem; font-weight: 700; }
+.vp-chip.ok, .vp-badge.ok { background: var(--ok-bg); color: var(--ok); }
+.vp-chip.warn, .vp-badge.warn { background: var(--warn-bg); color: var(--warn); }
+.vp-chip.bad, .vp-badge.bad { background: var(--bad-bg); color: var(--bad); }
+.vp-item { margin-top: 10px; padding: 11px 13px; background: #fff; border: 1px solid #d9e0d6; border-left: 5px solid #d9e0d6; border-radius: 10px; }
+.vp-item.ok { border-left-color: var(--ok); } .vp-item.warn { border-left-color: var(--warn); } .vp-item.bad { border-left-color: var(--bad); }
+.vp-item-head { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; overflow-wrap: anywhere; }
+.vp-item ul { margin: 6px 0; padding-left: 20px; font-size: 0.9rem; }
+.vp-item a { font-size: 0.9rem; color: #203b2b; font-weight: 600; }
+.vp-warn { margin: 6px 0 0; font-weight: 700; color: var(--bad); font-size: 0.9rem; }
+.vp-suggest { margin: 6px 0 0; font-size: 0.9rem; color: #5f6f64; }

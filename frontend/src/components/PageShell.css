@@ -1,0 +1,28 @@
+.dm-shell {
+  margin-left: 238px;
+  min-height: 100vh;
+  background: #f7f8f5;
+}
+
+/* Same sidebar widths as Navbar.css */
+@media (max-width: 900px) { .dm-shell { margin-left: 205px; } }
+@media (max-width: 600px) { .dm-shell { margin-left: 64px; } }
+
+/* DraftMate colours for the backend pages. They win over each page's own (blue / dark-mode) variables. */
+.dm-shell .ci-page,
+.dm-shell .pr-page,
+.dm-shell .rs-page,
+.dm-shell .un-page {
+  --bg: #f7f8f5; --card: #ffffff; --ink: #27382d; --muted: #5f6f64; --line: #d9e0d6;
+  --accent: #203b2b; --accent-ink: #f8f7f2;
+  --ok: #1e7d3c; --ok-bg: #e3f1e6; --warn: #8a5a00; --warn-bg: #fff3d6; --bad: #b3261e; --bad-bg: #fdeceb;
+  --mod: #203b2b; --mod-bg: #e6eee4;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 34px 38px 56px;
+  background: transparent;
+}
+.dm-shell .ci-page.ci-embed { padding: 0; max-width: none; margin: 0; }
+@media (max-width: 700px) {
+  .dm-shell .ci-page, .dm-shell .pr-page, .dm-shell .rs-page, .dm-shell .un-page { padding: 22px 14px 40px; }
+}

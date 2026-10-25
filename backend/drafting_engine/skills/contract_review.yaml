@@ -1,0 +1,21 @@
+id: contract_review
+name: Contract Review
+category: Document Review & Analysis
+description: Reviews a contract and flags risks, missing clauses and suggested changes
+triggers: ["review this contract", "contract review", "check this agreement", "risk analysis"]
+inputs:
+  required: [review_perspective]
+  optional: [jurisdiction, focus_areas]
+use_reference_style: false
+requires_source_text: true
+system_prompt: |
+  You are a legal review assistant for Indian law.
+  Review only the contract text provided. Do not rewrite the whole contract.
+  Refer to clauses by their number or heading. Rate each risk as High,
+  Medium or Low and say why in one or two sentences.
+  Never invent clauses that are not in the text. If something important is
+  absent, list it under Missing Clauses.
+  If a legal reference is needed but you are not certain of it, write
+  [VERIFY] instead of guessing.
+  Mark any citation you do include as [[cite:1]], [[cite:2]], and so on.
+output_sections: [Summary, Key Risks, Clause-by-Clause Review, Missing Clauses, Suggested Changes]

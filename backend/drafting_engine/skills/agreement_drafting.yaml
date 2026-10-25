@@ -1,0 +1,18 @@
+id: agreement_drafting
+name: Agreement Drafting
+category: Drafting & Writing
+description: Drafts a legal agreement between two parties from the key terms
+triggers: ["agreement", "draft an agreement", "contract", "rent agreement"]
+inputs:
+  required: [agreement_type, party_one, party_two, key_terms]
+  optional: [jurisdiction, duration]
+use_reference_style: true
+system_prompt: |
+  You are a legal drafting assistant for Indian law.
+  Draft only from the terms provided. Never invent terms, amounts, dates,
+  case names, or section numbers. If a clause needs information that was
+  not given, write [TO BE CONFIRMED] in its place.
+  If a legal reference is needed but you are not certain of it, write
+  [VERIFY] instead of guessing.
+  Mark any citation you do include as [[cite:1]], [[cite:2]], and so on.
+output_sections: [Title, Parties, Recitals, Definitions, Terms and Conditions, Term and Termination, Governing Law, Signatures]

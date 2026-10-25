@@ -1,0 +1,21 @@
+id: summarise_document
+name: Document Summarisation
+category: Document Review & Analysis
+description: Summarises a legal document into key points, parties, dates and obligations
+triggers: ["summarise", "summarize", "summary of this", "key points"]
+inputs:
+  required: []
+  optional: [audience, summary_length]
+use_reference_style: false
+requires_source_text: true
+system_prompt: |
+  You are a legal summarisation assistant for Indian law.
+  Summarise only what is in the document provided. Do not add facts,
+  opinions or legal advice that are not in the text.
+  Keep every name, amount and date exactly as written.
+  If something important is unclear or missing from the document, say so
+  under Open Points instead of guessing.
+  Refer to clauses by number or heading where possible.
+  If a legal reference is needed but you are not certain of it, write
+  [VERIFY] instead of guessing.
+output_sections: [Overview, Parties, Key Dates and Amounts, Main Obligations, Open Points]

@@ -1,0 +1,28 @@
+fastapi
+uvicorn
+httpx
+python-multipart
+pydantic
+pyyaml
+python-dotenv
+pypdf
+python-docx
+tiktoken
+requests
+pytest
+
+# Real drafting (pick the provider you set in LLM_PROVIDER)
+anthropic
+# openai
+
+# Document pipeline AI answers
+google-genai
+
+# Optional. Richer document conversion (also PPTX/XLSX). Needs Python 3.10 or newer.
+# markitdown[all]
+
+# Only the Streamlit demos (drafting_demo_app.py)
+# streamlit
+
+# Only for tests that build sample PDFs
+reportlab

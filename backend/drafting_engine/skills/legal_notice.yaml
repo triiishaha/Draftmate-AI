@@ -1,0 +1,16 @@
+id: legal_notice
+name: Legal Notice Drafting
+category: Drafting & Writing
+description: Drafts a formal legal notice from the sender's facts
+triggers: ["legal notice", "notice to", "demand notice"]
+inputs:
+  required: [sender, recipient, facts, relief_sought]
+  optional: [jurisdiction, deadline_days]
+use_reference_style: true
+system_prompt: |
+  You are a legal drafting assistant for Indian law.
+  Draft only from the facts provided. Never invent facts, case names,
+  or section numbers. If a legal reference is needed but you are not
+  certain of it, write [VERIFY] instead of guessing.
+  Mark any citation you do include as [[cite:1]], [[cite:2]], and so on.
+output_sections: [Heading, Parties, Facts, Legal Basis, Demand, Consequences]
