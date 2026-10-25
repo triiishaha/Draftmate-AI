@@ -7,7 +7,7 @@ function html(text, title) {
 <style>body{font-family:"Times New Roman",serif;font-size:12pt;line-height:1.5;margin:2.5cm}p{margin:0 0 10pt}</style></head><body>${body}</body></html>`;
 }
 
-const API = (typeof process !== "undefined" && process.env && process.env.REACT_APP_API_URL) || "http://localhost:8000";
+const API = process.env.REACT_APP_API_URL || "http://localhost:8000";
 
 function save(blob, filename) {
   const a = document.createElement("a");
