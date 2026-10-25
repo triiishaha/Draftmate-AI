@@ -1,0 +1,26 @@
+# Render Blueprint: creates the two servers. The React app is deployed separately (Vercel or Netlify).
+services:
+  - type: web
+    name: draftmate-python
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: DRAFTMATE_CORS
+        sync: false
+      - key: PYTHON_VERSION
+        value: 3.11.9
+  - type: web
+    name: draftmate-node
+    runtime: node
+    rootDir: frontend/server
+    buildCommand: npm install
+    startCommand: node index.js
+    envVars:
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false

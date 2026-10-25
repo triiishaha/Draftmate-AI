@@ -6,7 +6,7 @@ import "./CaseLaw.css";
 const API =
   typeof window !== "undefined" && window.DRAFTMATE_API !== undefined
     ? window.DRAFTMATE_API
-    : "http://localhost:8000";
+    : (process.env.REACT_APP_API_URL || "http://localhost:8000");
 
 // UI wording the brief asks for. The API keeps its own status names.
 const STATUS = {
